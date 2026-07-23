@@ -20,6 +20,8 @@ interface Props {
   index: number;
   total: number;
   isReview?: boolean;
+  /** 이어풀기 복원: 이미 답한 문제면 채점 상태로 시작 (재기록 안 함) */
+  initialAnswer?: { selectedIndex: number; confidence: Confidence };
   onAnswered: (result: {
     selectedIndex: number;
     isCorrect: boolean;
@@ -34,13 +36,18 @@ export default function QuestionCard({
   index,
   total,
   isReview,
+  initialAnswer,
   onAnswered,
   onNext,
   isLast,
 }: Props) {
-  const [selected, setSelected] = useState<number | null>(null);
-  const [confidence, setConfidence] = useState<Confidence | null>(null);
-  const [submitted, setSubmitted] = useState(false);
+  const [selected, setSelected] = useState<number | null>(
+    initialAnswer?.selectedIndex ?? null
+  );
+  const [confidence, setConfidence] = useState<Confidence | null>(
+    initialAnswer?.confidence ?? null
+  );
+  const [submitted, setSubmitted] = useState(Boolean(initialAnswer));
 
   const isCorrect = submitted && selected === question.answerIndex;
 
@@ -172,8 +179,8 @@ export default function QuestionCard({
         )}
       </div>
 
-      {/* 하단 고정 CTA */}
-      <div className="safe-bottom sticky bottom-16 mt-4 bg-slate-100/0">
+      {/* 하단 고정 CTA — 불투명 바 처리로 콘텐츠 가림 방지 */}
+      <div className="safe-bottom sticky bottom-16 -mx-4 mt-4 border-t border-slate-200/70 bg-canvas/95 px-4 py-3 backdrop-blur">
         {!submitted ? (
           <button
             className="btn-primary w-full"

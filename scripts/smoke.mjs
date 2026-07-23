@@ -64,6 +64,19 @@ try {
   const nextProgress = await page.locator("text=/2 \\/ \\d+/").first().count();
   ok(nextProgress > 0, "다음 문제로 진행 (2 / N)");
 
+  // 7-b) 이어풀기: 새로고침해도 세션이 이어져야 한다
+  await page.reload({ waitUntil: "networkidle" });
+  await page.waitForSelector("text=/2 \\/ \\d+/", { timeout: 5000 }).catch(() => {});
+  const resumed = await page.locator("text=/2 \\/ \\d+/").first().count();
+  ok(resumed > 0, "새로고침 후 세션 이어풀기 (2 / N 유지)");
+  const attemptsAfterReload = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("sqld.attempts") || "[]").length
+  );
+  ok(
+    attemptsAfterReload === 1,
+    `새로고침 후 중복 기록 없음 (attempts=${attemptsAfterReload})`
+  );
+
   // 8) 홈에서 예상점수/ D-day 렌더 확인
   await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
   await page.waitForSelector("text=예상 점수", { timeout: 5000 });

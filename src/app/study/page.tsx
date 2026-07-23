@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { questions, useStore } from "@/lib/store";
 import { buildTodaySet } from "@/lib/session";
 import QuestionCard from "@/components/QuestionCard";
@@ -14,37 +14,86 @@ interface Result {
   confidence: Confidence;
 }
 
+// 진행 중 세션을 sessionStorage에 보관 → 새로고침/앱 전환 후에도 이어풀기
+const SESSION_KEY = "sqld.session";
+
+interface SavedSession {
+  ids: string[];
+  cursor: number;
+  // 문제별 답안 (재기록 방지 · 이어풀기 복원용)
+  answers: Record<
+    string,
+    { selectedIndex: number; isCorrect: boolean; confidence: Confidence }
+  >;
+}
+
+function loadSession(): SavedSession | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(SESSION_KEY);
+    return raw ? (JSON.parse(raw) as SavedSession) : null;
+  } catch {
+    return null;
+  }
+}
+function saveSession(s: SavedSession): void {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(s));
+}
+function clearSession(): void {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.removeItem(SESSION_KEY);
+}
+
 export default function StudyPage() {
   const { ready, settings, attempts, reviews, submitAnswer } = useStore();
   const qMap = useMemo(() => new Map(questions.map((q) => [q.id, q])), []);
 
-  // 세션 문제 세트는 최초 1회만 구성 (풀이 중 재구성 방지)
-  const frozen = useRef<string[] | null>(null);
-  if (frozen.current === null && ready) {
-    frozen.current = buildTodaySet({
-      questions,
-      attempts,
-      reviews,
-      settings,
-    }).questionIds;
-  }
-  const dueSet = useRef<Set<string> | null>(null);
-  if (dueSet.current === null && ready) {
-    dueSet.current = new Set(
+  const [session, setSession] = useState<SavedSession | null>(null);
+  const dueRef = useRef<Set<string>>(new Set());
+  const inited = useRef(false);
+
+  // 최초 1회: 저장된 세션 복원 or 새로 구성
+  useEffect(() => {
+    if (!ready || inited.current) return;
+    inited.current = true;
+    dueRef.current = new Set(
       reviews
         .filter((r) => new Date(r.dueAt).getTime() <= Date.now())
         .map((r) => r.questionId)
     );
-  }
+    const saved = loadSession();
+    const valid =
+      saved &&
+      Array.isArray(saved.ids) &&
+      saved.ids.length > 0 &&
+      saved.answers != null &&
+      saved.ids.every((id) => qMap.has(id)) &&
+      saved.cursor < saved.ids.length;
+    if (valid) {
+      setSession(saved);
+      return;
+    }
+    const ids = buildTodaySet({ questions, attempts, reviews, settings })
+      .questionIds;
+    const fresh: SavedSession = { ids, cursor: 0, answers: {} };
+    setSession(fresh);
+    if (ids.length > 0) saveSession(fresh);
+  }, [ready, attempts, reviews, settings, qMap]);
 
-  const [cursor, setCursor] = useState(0);
-  const [results, setResults] = useState<Result[]>([]);
+  // 세션 변경 시 저장(완료되면 정리)
+  useEffect(() => {
+    if (!session) return;
+    if (session.ids.length === 0) return;
+    if (session.cursor >= session.ids.length) clearSession();
+    else saveSession(session);
+  }, [session]);
 
-  if (!ready || frozen.current === null) {
+  if (!ready || session === null) {
     return <div className="py-10 text-center text-slate-400">불러오는 중…</div>;
   }
 
-  const ids = frozen.current;
+  const { ids, cursor, answers } = session;
 
   if (ids.length === 0) {
     return (
@@ -54,18 +103,30 @@ export default function StudyPage() {
 
   // 세션 완료
   if (cursor >= ids.length) {
+    const results: Result[] = ids
+      .map((id) =>
+        answers[id]
+          ? {
+              questionId: id,
+              isCorrect: answers[id].isCorrect,
+              confidence: answers[id].confidence,
+            }
+          : null
+      )
+      .filter((r): r is Result => r !== null);
     return <Summary results={results} />;
   }
 
   const q = qMap.get(ids[cursor]);
   if (!q) {
-    // 안전장치: 알 수 없는 문제는 건너뛴다 (버튼으로 다음 진행)
     return (
       <div className="py-16 text-center">
         <p className="text-sm text-slate-500">문제를 불러올 수 없습니다.</p>
         <button
           className="btn-ghost mt-4 inline-flex"
-          onClick={() => setCursor((c) => c + 1)}
+          onClick={() =>
+            setSession((s) => (s ? { ...s, cursor: s.cursor + 1 } : s))
+          }
         >
           다음
         </button>
@@ -73,27 +134,49 @@ export default function StudyPage() {
     );
   }
 
+  const existing = answers[q.id];
+
   return (
     <QuestionCard
       key={q.id}
       question={q}
       index={cursor}
       total={ids.length}
-      isReview={dueSet.current?.has(q.id)}
+      isReview={dueRef.current.has(q.id)}
       isLast={cursor === ids.length - 1}
+      initialAnswer={
+        existing
+          ? { selectedIndex: existing.selectedIndex, confidence: existing.confidence }
+          : undefined
+      }
       onAnswered={(r) => {
+        // 이미 기록된 문제면 재기록하지 않음(이어풀기 복원 시 중복 방지)
+        if (answers[q.id]) return;
         submitAnswer({
           questionId: q.id,
           selectedIndex: r.selectedIndex,
           isCorrect: r.isCorrect,
           confidence: r.confidence,
         });
-        setResults((prev) => [
-          ...prev,
-          { questionId: q.id, isCorrect: r.isCorrect, confidence: r.confidence },
-        ]);
+        setSession((s) =>
+          s
+            ? {
+                ...s,
+                answers: {
+                  ...s.answers,
+                  [q.id]: {
+                    selectedIndex: r.selectedIndex,
+                    isCorrect: r.isCorrect,
+                    confidence: r.confidence,
+                  },
+                },
+              }
+            : s
+        );
       }}
-      onNext={() => setCursor((c) => c + 1)}
+      onNext={() =>
+        setSession((s) => (s ? { ...s, cursor: s.cursor + 1 } : s))
+      }
     />
   );
 }

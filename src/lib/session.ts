@@ -1,6 +1,42 @@
 // 오늘의 문제 세트 구성 로직
-import type { Attempt, Question, Review, Settings } from "./types";
+import type { Attempt, Category, Question, Review, Settings } from "./types";
 import { dueReviewIds } from "./srs";
+import { latestAttempts } from "./scoring";
+
+/**
+ * 유형별 취약도 순위표. 값이 낮을수록 취약(우선).
+ * - 정답률이 낮은 유형일수록 우선.
+ * - 아직 안 푼 유형은 0.5(중립)로 두어, 취약 유형 다음·강한 유형 앞에 배치.
+ */
+function categoryWeakness(
+  attempts: Attempt[],
+  byId: Map<string, Question>
+): Map<Category, number> {
+  const latest = [...latestAttempts(attempts).values()];
+  const agg = new Map<Category, { c: number; t: number }>();
+  for (const a of latest) {
+    const cat = byId.get(a.questionId)?.category;
+    if (!cat) continue;
+    const cur = agg.get(cat) ?? { c: 0, t: 0 };
+    cur.t += 1;
+    if (a.isCorrect) cur.c += 1;
+    agg.set(cat, cur);
+  }
+  const rank = new Map<Category, number>();
+  for (const [cat, { c, t }] of agg) rank.set(cat, t ? c / t : 0.5);
+  return rank;
+}
+
+/** 취약 유형(정답률 낮은 순) 먼저 오도록 정렬 */
+function byWeakness(
+  list: Question[],
+  weakness: Map<Category, number>
+): Question[] {
+  return [...list].sort(
+    (a, b) =>
+      (weakness.get(a.category) ?? 0.5) - (weakness.get(b.category) ?? 0.5)
+  );
+}
 
 interface BuildInput {
   questions: Question[];
@@ -47,10 +83,12 @@ export function buildTodaySet(input: BuildInput): TodaySet {
   const due = dueReviewIds(reviews, now).filter((id) => byId.has(id));
   const chosen = new Set<string>(due.slice(0, goal));
 
-  // 2) 신규(아직 안 푼) 문제로 채우기 — SQL 가중
+  // 2) 신규(아직 안 푼) 문제로 채우기 — SQL 가중 + 취약 유형 우선
+  const weakness = categoryWeakness(attempts, byId);
   const attemptedIds = new Set(attempts.map((a) => a.questionId));
-  const fresh = questions.filter(
-    (q) => !attemptedIds.has(q.id) && !chosen.has(q.id)
+  const fresh = byWeakness(
+    questions.filter((q) => !attemptedIds.has(q.id) && !chosen.has(q.id)),
+    weakness
   );
   const freshSql = fresh.filter((q) => q.subject === "sql");
   const freshDm = fresh.filter((q) => q.subject === "data_modeling");
@@ -83,7 +121,13 @@ export function buildTodaySet(input: BuildInput): TodaySet {
     }
     const stale = questions
       .filter((q) => !chosen.has(q.id))
-      .sort((a, b) => (lastSeen.get(a.id) ?? 0) - (lastSeen.get(b.id) ?? 0));
+      .sort((a, b) => {
+        // 취약 유형 우선, 동률이면 오래 안 본 것 우선
+        const wa = weakness.get(a.category) ?? 0.5;
+        const wb = weakness.get(b.category) ?? 0.5;
+        if (wa !== wb) return wa - wb;
+        return (lastSeen.get(a.id) ?? 0) - (lastSeen.get(b.id) ?? 0);
+      });
     for (const q of stale) {
       if (chosen.size >= goal) break;
       chosen.add(q.id);

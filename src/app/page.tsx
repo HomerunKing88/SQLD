@@ -7,6 +7,7 @@ import { daysUntil, ddayLabel } from "@/lib/dday";
 import { buildTodaySet } from "@/lib/session";
 import { estimateScore, accuracyBySubject } from "@/lib/scoring";
 import { dueReviewIds } from "@/lib/srs";
+import { dailyProgress } from "@/lib/streak";
 
 export default function HomePage() {
   const { ready, settings, attempts, reviews } = useStore();
@@ -22,6 +23,10 @@ export default function HomePage() {
     [attempts]
   );
   const dueCount = dueReviewIds(reviews).length;
+  const daily = useMemo(
+    () => dailyProgress(attempts, settings.dailyGoal),
+    [attempts, settings.dailyGoal]
+  );
 
   if (!ready) return <Loading />;
 
@@ -31,11 +36,20 @@ export default function HomePage() {
     <div className="space-y-3">
       {/* D-day 히어로 — 녹색, 포인트는 노란 밑줄 */}
       <div className="rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 p-5 text-white shadow-card">
-        <p className="text-xs font-medium text-brand-100">시험까지</p>
-        <p className="mt-1 inline-block text-4xl font-black tracking-tight">
-          {ddayLabel(dday)}
-          <span className="mt-1 block h-1 w-12 rounded-full bg-accent-400" />
-        </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-xs font-medium text-brand-100">시험까지</p>
+            <p className="mt-1 inline-block text-4xl font-black tracking-tight">
+              {ddayLabel(dday)}
+              <span className="mt-1 block h-1 w-12 rounded-full bg-accent-400" />
+            </p>
+          </div>
+          {daily.streak > 0 && (
+            <span className="chip bg-accent-400 text-accent-ink">
+              🔥 {daily.streak}일 연속
+            </span>
+          )}
+        </div>
         <p className="mt-2 text-xs text-brand-100">
           {settings.examDate || "설정에서 시험일을 정하세요"}
         </p>
@@ -66,22 +80,42 @@ export default function HomePage() {
         </p>
       </div>
 
-      {/* 오늘의 학습 CTA */}
+      {/* 오늘의 학습 CTA — 진행률 & 목표 */}
       <div className="card">
-        <p className="text-sm font-bold text-slate-500">오늘의 학습</p>
-        <div className="mt-1 flex items-baseline gap-2">
-          <span className="text-3xl font-black text-slate-900">
-            {today.questionIds.length}
-          </span>
-          <span className="text-sm text-slate-400">문제</span>
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-bold text-slate-500">오늘의 학습</p>
           {today.reviewCount > 0 && (
-            <span className="chip ml-auto bg-accent-100 text-accent-ink">
+            <span className="chip bg-accent-100 text-accent-ink">
               복습 {today.reviewCount}
             </span>
           )}
         </div>
-        <Link href="/study" className="btn-primary mt-3 w-full">
-          오늘의 학습 시작
+        <div className="mt-1 flex items-baseline gap-2">
+          <span className="text-3xl font-black text-slate-900">
+            {daily.done}
+          </span>
+          <span className="text-sm text-slate-400">/ {daily.goal} 문제</span>
+          {daily.reached && (
+            <span className="ml-auto text-sm font-bold text-brand-600">
+              목표 달성 🎉
+            </span>
+          )}
+        </div>
+        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+          <div
+            className={`h-full ${daily.reached ? "bg-brand-500" : "bg-accent-400"}`}
+            style={{ width: `${daily.ratio * 100}%` }}
+          />
+        </div>
+        <Link
+          href="/study"
+          className={`mt-3 w-full ${daily.reached ? "btn-accent" : "btn-primary"}`}
+        >
+          {daily.reached
+            ? "복습 더 하기"
+            : daily.done > 0
+              ? "이어서 학습하기"
+              : "오늘의 학습 시작"}
         </Link>
       </div>
 

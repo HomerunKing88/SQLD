@@ -10,7 +10,7 @@ import {
 } from "react";
 import type { Attempt, Confidence, Review, Settings } from "./types";
 import { repository } from "./repository";
-import { advanceReview, scheduleOnWrong } from "./srs";
+import { nextReviewOnAnswer } from "./srs";
 import { QUESTIONS } from "@/data/questions";
 
 interface StoreValue {
@@ -79,16 +79,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       };
       repository.addAttempt(attempt);
 
-      // 복습 스케줄 갱신
+      // 복습 스케줄 갱신 (확신도 반영 SRS)
       const existing = repository.getReview(questionId);
-      let nextReview: Review | null;
-      if (isCorrect) {
-        nextReview = existing ? advanceReview(existing, true, now) : null;
-      } else {
-        nextReview = existing
-          ? advanceReview(existing, false, now)
-          : scheduleOnWrong(questionId, now);
-      }
+      const nextReview = nextReviewOnAnswer(
+        questionId,
+        existing,
+        isCorrect,
+        confidence,
+        now
+      );
       repository.upsertReview(questionId, nextReview);
 
       setAttempts(repository.getAttempts());
