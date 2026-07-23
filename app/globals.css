@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color: #18242B; background: #FFF9F1; }
+* { -webkit-tap-highlight-color: transparent; }
+body { min-height: 100vh; background: #FFF9F1; }
+button { touch-action: manipulation; }
+.safe-bottom { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
