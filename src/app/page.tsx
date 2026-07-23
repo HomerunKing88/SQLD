@@ -16,10 +16,7 @@ export default function HomePage() {
     () => buildTodaySet({ questions, attempts, reviews, settings }),
     [attempts, reviews, settings]
   );
-  const score = useMemo(
-    () => estimateScore(attempts, questions),
-    [attempts]
-  );
+  const score = useMemo(() => estimateScore(attempts, questions), [attempts]);
   const bySub = useMemo(
     () => accuracyBySubject(attempts, questions),
     [attempts]
@@ -31,14 +28,15 @@ export default function HomePage() {
   const passProjected = score.total >= 60;
 
   return (
-    <div className="space-y-4">
-      {/* D-day 히어로 */}
-      <div className="rounded-2xl bg-gradient-to-br from-brand to-brand-dark p-5 text-white shadow">
-        <p className="text-xs opacity-80">시험까지</p>
-        <p className="mt-1 text-4xl font-black tracking-tight">
+    <div className="space-y-3">
+      {/* D-day 히어로 — 녹색, 포인트는 노란 밑줄 */}
+      <div className="rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 p-5 text-white shadow-card">
+        <p className="text-xs font-medium text-brand-100">시험까지</p>
+        <p className="mt-1 inline-block text-4xl font-black tracking-tight">
           {ddayLabel(dday)}
+          <span className="mt-1 block h-1 w-12 rounded-full bg-accent-400" />
         </p>
-        <p className="mt-1 text-xs opacity-80">
+        <p className="mt-2 text-xs text-brand-100">
           {settings.examDate || "설정에서 시험일을 정하세요"}
         </p>
       </div>
@@ -48,32 +46,18 @@ export default function HomePage() {
         <div className="flex items-center justify-between">
           <p className="text-sm font-bold text-slate-500">예상 점수</p>
           {!score.enoughSample && (
-            <span className="chip bg-amber-100 text-amber-700">표본 부족</span>
+            <span className="chip bg-accent-100 text-accent-ink">표본 부족</span>
           )}
         </div>
         <div className="mt-1 flex items-end gap-2">
-          <span
-            className={`text-4xl font-black ${
-              passProjected ? "text-emerald-600" : "text-slate-900"
-            }`}
-          >
+          <span className="text-4xl font-black text-brand-700">
             {score.total}
           </span>
           <span className="mb-1 text-sm text-slate-400">/ 100 (합격 60)</span>
         </div>
         <div className="mt-3 space-y-2 text-xs">
-          <ScoreRow
-            label="데이터 모델링"
-            value={score.dataModeling}
-            max={20}
-            color="bg-violet-500"
-          />
-          <ScoreRow
-            label="SQL 기본 및 활용"
-            value={score.sql}
-            max={80}
-            color="bg-brand"
-          />
+          <ScoreRow label="데이터 모델링" value={score.dataModeling} max={20} />
+          <ScoreRow label="SQL 기본 및 활용" value={score.sql} max={80} />
         </div>
         <p className="mt-3 text-xs text-slate-500">
           {passProjected
@@ -86,12 +70,12 @@ export default function HomePage() {
       <div className="card">
         <p className="text-sm font-bold text-slate-500">오늘의 학습</p>
         <div className="mt-1 flex items-baseline gap-2">
-          <span className="text-2xl font-black text-slate-900">
+          <span className="text-3xl font-black text-slate-900">
             {today.questionIds.length}
           </span>
           <span className="text-sm text-slate-400">문제</span>
           {today.reviewCount > 0 && (
-            <span className="chip bg-violet-100 text-violet-700">
+            <span className="chip ml-auto bg-accent-100 text-accent-ink">
               복습 {today.reviewCount}
             </span>
           )}
@@ -116,15 +100,19 @@ export default function HomePage() {
         />
       </div>
 
+      {/* 복습 대기 — 흰 카드 + 노란 포인트 */}
       {dueCount > 0 && (
         <Link
           href="/review"
-          className="flex items-center justify-between rounded-2xl bg-violet-600 p-4 text-white shadow-sm"
+          className="flex items-center gap-3 rounded-2xl border border-accent-200 bg-white p-4 shadow-card"
         >
-          <span className="text-sm font-semibold">
-            🔁 복습 대기 {dueCount}문제
+          <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-accent-100 text-lg">
+            🔁
           </span>
-          <span>→</span>
+          <span className="text-sm font-semibold text-slate-700">
+            복습 대기 {dueCount}문제
+          </span>
+          <span className="ml-auto text-accent-500">→</span>
         </Link>
       )}
     </div>
@@ -135,12 +123,10 @@ function ScoreRow({
   label,
   value,
   max,
-  color,
 }: {
   label: string;
   value: number;
   max: number;
-  color: string;
 }) {
   return (
     <div>
@@ -152,7 +138,7 @@ function ScoreRow({
       </div>
       <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
         <div
-          className={`h-full ${color}`}
+          className="h-full bg-brand-500"
           style={{ width: `${(value / max) * 100}%` }}
         />
       </div>
@@ -180,7 +166,7 @@ function AccRow({
       </div>
       <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
         <div
-          className="h-full bg-emerald-500"
+          className="h-full bg-brand-500"
           style={{ width: `${rate * 100}%` }}
         />
       </div>

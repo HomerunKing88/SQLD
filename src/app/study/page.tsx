@@ -114,10 +114,13 @@ function Summary({ results }: { results: Result[] }) {
 
   return (
     <div className="space-y-4 py-4">
-      <div className="rounded-2xl bg-gradient-to-br from-brand to-brand-dark p-6 text-center text-white shadow">
-        <p className="text-sm opacity-80">오늘 학습 완료 🎉</p>
-        <p className="mt-2 text-5xl font-black">{rate}%</p>
-        <p className="mt-1 text-sm opacity-80">
+      <div className="rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 p-6 text-center text-white shadow-card">
+        <p className="text-sm text-brand-100">오늘 학습 완료 🎉</p>
+        <p className="mt-2 text-5xl font-black">
+          {rate}
+          <span className="text-3xl">%</span>
+        </p>
+        <p className="mt-1 text-sm text-brand-100">
           {correct} / {total} 정답
         </p>
       </div>
@@ -132,7 +135,7 @@ function Summary({ results }: { results: Result[] }) {
 
       <div className="card">
         <p className="text-sm font-bold text-slate-500">갱신된 예상 점수</p>
-        <p className="mt-1 text-3xl font-black text-slate-900">
+        <p className="mt-1 text-3xl font-black text-brand-700">
           {score.total}
           <span className="ml-1 text-sm font-normal text-slate-400">
             / 100

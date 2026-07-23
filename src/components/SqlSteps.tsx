@@ -65,7 +65,7 @@ export default function SqlSteps({ steps }: { steps: SqlStepsType }) {
                 className="flex w-full items-center justify-between gap-2 bg-slate-50 px-3 py-2 text-left"
               >
                 <span className="flex items-center gap-2">
-                  <span className="chip bg-brand/10 text-brand">
+                  <span className="chip bg-brand-100 text-brand-700">
                     {idx + 1}. {s.clause}
                   </span>
                 </span>

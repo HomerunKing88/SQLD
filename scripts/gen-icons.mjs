@@ -48,16 +48,19 @@ function png(size, draw) {
   ]);
 }
 
-const BRAND = [37, 99, 235]; // #2563eb
+const BRAND = [22, 163, 74]; // #16a34a 녹색
+const ACCENT = [250, 204, 21]; // #facc15 노란 포인트
 const LIGHT = [255, 255, 255];
 
 function make(size) {
   return png(size, (x, y) => {
     const c = size / 2;
     const d = Math.max(Math.abs(x - c), Math.abs(y - c));
-    // 가운데 흰 라운드 사각형(대략)
-    if (d < size * 0.24) return LIGHT;
-    // 대각선 악센트
+    // 가운데 흰 라운드 사각형
+    if (d < size * 0.26) return LIGHT;
+    // 흰 사각형을 감싸는 얇은 노란 포인트 링
+    if (d < size * 0.31) return ACCENT;
+    // 녹색 배경
     return BRAND;
   });
 }

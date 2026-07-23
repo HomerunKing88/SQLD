@@ -10,9 +10,9 @@ import {
 import SqlSteps from "./SqlSteps";
 
 const CONF_STYLE: Record<Confidence, string> = {
-  sure: "bg-emerald-100 text-emerald-700 border-emerald-300",
-  unsure: "bg-amber-100 text-amber-700 border-amber-300",
-  guess: "bg-rose-100 text-rose-700 border-rose-300",
+  sure: "bg-brand-100 text-brand-700 border-brand-300",
+  unsure: "bg-accent-100 text-accent-ink border-accent-300",
+  guess: "bg-slate-100 text-slate-600 border-slate-300",
 };
 
 interface Props {
@@ -63,7 +63,7 @@ export default function QuestionCard({
         </span>
         <span className="flex items-center gap-1">
           {isReview && (
-            <span className="chip bg-violet-100 text-violet-700">복습</span>
+            <span className="chip bg-accent-100 text-accent-ink">복습</span>
           )}
           <span className="chip bg-slate-100 text-slate-600">
             {SUBJECT_LABEL[question.subject]}
@@ -72,7 +72,7 @@ export default function QuestionCard({
       </div>
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
         <div
-          className="h-full bg-brand transition-all"
+          className="h-full bg-brand-500 transition-all"
           style={{ width: `${((index + 1) / total) * 100}%` }}
         />
       </div>
@@ -80,7 +80,7 @@ export default function QuestionCard({
       {/* 문제 */}
       <div className="mt-4 flex-1">
         <div className="card">
-          <p className="mb-1 text-xs font-medium text-brand">
+          <p className="mb-1 text-xs font-semibold text-brand-600">
             {CATEGORY_LABEL[question.category]}
           </p>
           <p className="whitespace-pre-wrap text-[15px] font-semibold leading-relaxed text-slate-900">
@@ -96,11 +96,11 @@ export default function QuestionCard({
             let cls =
               "border-slate-200 bg-white text-slate-700 active:bg-slate-50";
             if (submitted) {
-              if (correct) cls = "border-emerald-400 bg-emerald-50 text-emerald-800";
-              else if (chosen) cls = "border-rose-400 bg-rose-50 text-rose-800";
+              if (correct) cls = "border-brand-400 bg-brand-50 text-brand-800";
+              else if (chosen) cls = "border-rose-300 bg-rose-50 text-rose-700";
               else cls = "border-slate-200 bg-white text-slate-400";
             } else if (chosen) {
-              cls = "border-brand bg-brand/5 text-brand";
+              cls = "border-brand-500 bg-brand-50 text-brand-700";
             }
             return (
               <button
@@ -148,7 +148,7 @@ export default function QuestionCard({
             <div
               className={`rounded-xl p-3 text-sm font-semibold ${
                 isCorrect
-                  ? "bg-emerald-50 text-emerald-700"
+                  ? "bg-brand-50 text-brand-700"
                   : "bg-rose-50 text-rose-700"
               }`}
             >

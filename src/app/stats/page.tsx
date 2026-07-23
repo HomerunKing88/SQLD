@@ -53,10 +53,10 @@ export default function StatsPage() {
         <div className="flex items-center justify-between">
           <p className="text-sm font-bold text-slate-500">예상 점수</p>
           {!score.enoughSample && (
-            <span className="chip bg-amber-100 text-amber-700">표본 부족</span>
+            <span className="chip bg-accent-100 text-accent-ink">표본 부족</span>
           )}
         </div>
-        <p className="mt-1 text-4xl font-black text-slate-900">
+        <p className="mt-1 text-4xl font-black text-brand-700">
           {score.total}
           <span className="ml-1 text-base font-normal text-slate-400">
             / 100
@@ -145,12 +145,12 @@ function Bar({
   const pct = Math.round(rate * 100);
   const color =
     total === 0
-      ? "bg-slate-300"
+      ? "bg-slate-200"
       : pct >= 70
-        ? "bg-emerald-500"
+        ? "bg-brand-500"
         : pct >= 40
-          ? "bg-amber-500"
-          : "bg-rose-500";
+          ? "bg-accent-400"
+          : "bg-rose-400";
   return (
     <div className="mb-3 last:mb-0">
       <div className="mb-1 flex justify-between text-xs">

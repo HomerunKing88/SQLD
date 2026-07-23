@@ -12,7 +12,7 @@ body {
 }
 
 body {
-  @apply bg-slate-100 text-slate-900 antialiased;
+  @apply bg-canvas text-slate-800 antialiased;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
 }
@@ -27,14 +27,19 @@ body {
     @apply inline-flex items-center justify-center rounded-xl px-4 font-semibold transition active:scale-[0.98] disabled:opacity-40;
     min-height: 52px;
   }
+  /* 주요 동작: 녹색 */
   .btn-primary {
     @apply btn bg-brand text-white shadow-sm active:bg-brand-dark;
   }
+  /* 포인트 동작: 노란색 (강조) */
+  .btn-accent {
+    @apply btn bg-accent-400 text-accent-ink shadow-sm active:bg-accent-500;
+  }
   .btn-ghost {
-    @apply btn bg-white text-slate-700 border border-slate-200;
+    @apply btn border border-slate-200 bg-white text-slate-700;
   }
   .card {
-    @apply rounded-2xl bg-white p-4 shadow-sm;
+    @apply rounded-2xl border border-slate-200/70 bg-white p-4 shadow-card;
   }
   .chip {
     @apply inline-flex items-center rounded-full px-3 py-1 text-sm font-medium;

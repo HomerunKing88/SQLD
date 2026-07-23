@@ -108,10 +108,10 @@ export default function ReviewPage() {
       )}
 
       {dueList.length > 0 && (
-        <div className="card border-2 border-violet-200">
+        <div className="card border-2 border-accent-200">
           <div className="mb-2 flex items-center justify-between">
-            <p className="text-sm font-bold text-violet-700">
-              지금 복습할 문제 {dueList.length}
+            <p className="flex items-center gap-1.5 text-sm font-bold text-accent-ink">
+              <span>🔁</span> 지금 복습할 문제 {dueList.length}
             </p>
           </div>
           <ul className="space-y-1">
