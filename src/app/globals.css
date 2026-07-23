@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  @apply bg-slate-100 text-slate-900 antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+/* 하단 고정 CTA가 시스템 홈바에 가리지 않도록 */
+.safe-bottom {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px));
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center rounded-xl px-4 font-semibold transition active:scale-[0.98] disabled:opacity-40;
+    min-height: 52px;
+  }
+  .btn-primary {
+    @apply btn bg-brand text-white shadow-sm active:bg-brand-dark;
+  }
+  .btn-ghost {
+    @apply btn bg-white text-slate-700 border border-slate-200;
+  }
+  .card {
+    @apply rounded-2xl bg-white p-4 shadow-sm;
+  }
+  .chip {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-sm font-medium;
+  }
+}
