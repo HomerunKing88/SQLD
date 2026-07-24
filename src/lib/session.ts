@@ -144,3 +144,40 @@ export function buildTodaySet(input: BuildInput): TodaySet {
     newCount: ordered.length - reviewIds.length,
   };
 }
+
+/**
+ * 취약 유형 집중 특훈 세트.
+ * - 정답률이 낮은 유형(취약)을 우선, 최근 오답 문항을 앞쪽에 배치.
+ * - 데이터가 없으면 SQL 과목을 약간 우선(핵심 목표 반영).
+ * - '오늘의 세트'와 달리 유형을 흩뿌리지 않고 취약 순서대로 몰아서 낸다.
+ */
+export function buildWeakDrillSet(input: {
+  questions: Question[];
+  attempts: Attempt[];
+  settings: Settings;
+}): { questionIds: string[]; focusCategory: Category | null } {
+  const { questions, attempts, settings } = input;
+  const goal = Math.max(1, settings.dailyGoal);
+  const byId = new Map(questions.map((q) => [q.id, q]));
+  const weakness = categoryWeakness(attempts, byId);
+  const latest = latestAttempts(attempts);
+
+  // 우선순위 점수(낮을수록 먼저): 유형 취약도 + 오답 가중 + SQL 소폭 우선
+  const prio = (q: Question): number => {
+    const w = weakness.get(q.category) ?? 0.5;
+    const a = latest.get(q.id);
+    const wrongAdj = a ? (a.isCorrect ? 0.3 : -0.3) : 0; // 오답 앞으로, 정답 뒤로
+    const sqlAdj = q.subject === "sql" ? -0.05 : 0;
+    return w + wrongAdj + sqlAdj;
+  };
+
+  const ordered = [...questions].sort((a, b) => {
+    const d = prio(a) - prio(b);
+    return d !== 0 ? d : a.id.localeCompare(b.id);
+  });
+  const questionIds = ordered.slice(0, goal).map((q) => q.id);
+  const focusCategory = questionIds.length
+    ? byId.get(questionIds[0])!.category
+    : null;
+  return { questionIds, focusCategory };
+}

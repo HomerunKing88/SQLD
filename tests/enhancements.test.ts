@@ -13,7 +13,7 @@ import {
   currentStreak,
   dailyProgress,
 } from "../src/lib/streak.ts";
-import { buildTodaySet } from "../src/lib/session.ts";
+import { buildTodaySet, buildWeakDrillSet } from "../src/lib/session.ts";
 import type { Attempt, Confidence, Question, Review, Settings } from "../src/lib/types.ts";
 
 const NOW = new Date("2026-07-23T09:00:00Z");
@@ -175,4 +175,23 @@ test("buildTodaySet: 취약(정답률 낮은) SQL 유형을 먼저 낸다", () =
     "adv_new",
     "취약 유형(sql_advanced) 신규 문제가 먼저 나와야 한다"
   );
+});
+
+test("buildWeakDrillSet: 취약 유형을 focus로, 취약 문제 우선", () => {
+  const questions: Question[] = [
+    mkQ("bas1", "sql_basics"),
+    mkQ("adv1", "sql_advanced"),
+    mkQ("adv2", "sql_advanced"),
+    mkQ("mod1", "modeling_basics"),
+  ];
+  // sql_advanced 를 틀림(취약), sql_basics 는 맞힘(강함)
+  const attempts: Attempt[] = [
+    { id: "1", questionId: "adv1", selectedIndex: 1, isCorrect: false, confidence: "guess", answeredAt: "2026-07-20T00:00:00Z" },
+    { id: "2", questionId: "bas1", selectedIndex: 0, isCorrect: true, confidence: "sure", answeredAt: "2026-07-20T00:00:00Z" },
+  ];
+  const settings: Settings = { examDate: "", dailyGoal: 2, sqlWeight: 0.7 };
+  const res = buildWeakDrillSet({ questions, attempts, settings });
+  assert.equal(res.focusCategory, "sql_advanced", "가장 취약한 유형이 focus");
+  assert.ok(res.questionIds.includes("adv1"), "취약 오답 문항이 포함");
+  assert.ok(res.questionIds.length <= 2, "목표 수 이내");
 });

@@ -5,9 +5,14 @@ import { useMemo } from "react";
 import { questions, useStore } from "@/lib/store";
 import { daysUntil, ddayLabel } from "@/lib/dday";
 import { buildTodaySet } from "@/lib/session";
-import { estimateScore, accuracyBySubject } from "@/lib/scoring";
+import {
+  estimateScore,
+  accuracyBySubject,
+  accuracyByCategoryWith,
+} from "@/lib/scoring";
 import { dueReviewIds } from "@/lib/srs";
 import { dailyProgress } from "@/lib/streak";
+import { CATEGORY_LABEL, type Category } from "@/lib/types";
 
 export default function HomePage() {
   const { ready, settings, attempts, reviews } = useStore();
@@ -27,6 +32,17 @@ export default function HomePage() {
     () => dailyProgress(attempts, settings.dailyGoal),
     [attempts, settings.dailyGoal]
   );
+  // 가장 취약한 유형(정답률 최저, 표본 있는 것 중) — 특훈 진입점에 표시
+  const weakest = useMemo(() => {
+    const byCat = accuracyByCategoryWith(attempts, questions);
+    let pick: { cat: Category; rate: number } | null = null;
+    (Object.keys(byCat) as Category[]).forEach((c) => {
+      const a = byCat[c];
+      if (!a || a.total === 0) return;
+      if (!pick || a.rate < pick.rate) pick = { cat: c, rate: a.rate };
+    });
+    return pick as { cat: Category; rate: number } | null;
+  }, [attempts]);
 
   if (!ready) return <Loading />;
 
@@ -118,6 +134,25 @@ export default function HomePage() {
               : "오늘의 학습 시작"}
         </Link>
       </div>
+
+      {/* 취약 유형 특훈 진입 */}
+      <Link
+        href="/study?mode=drill"
+        className="flex items-center gap-3 rounded-2xl border border-slate-200/70 bg-white p-4 shadow-card"
+      >
+        <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-brand-50 text-lg">
+          🎯
+        </span>
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-slate-700">취약 유형 특훈</p>
+          <p className="truncate text-xs text-slate-400">
+            {weakest
+              ? `${CATEGORY_LABEL[weakest.cat]} ${Math.round(weakest.rate * 100)}% — 집중 공략`
+              : "정답률 낮은 유형을 몰아서 연습"}
+          </p>
+        </div>
+        <span className="ml-auto text-brand-500">→</span>
+      </Link>
 
       {/* 영역별 정답률 요약 */}
       <div className="card">

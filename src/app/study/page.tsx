@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { questions, useStore } from "@/lib/store";
-import { buildTodaySet } from "@/lib/session";
+import { buildTodaySet, buildWeakDrillSet } from "@/lib/session";
 import QuestionCard from "@/components/QuestionCard";
-import type { Confidence } from "@/lib/types";
+import { CATEGORY_LABEL, type Confidence } from "@/lib/types";
 import { estimateScore } from "@/lib/scoring";
 
 interface Result {
@@ -14,10 +14,13 @@ interface Result {
   confidence: Confidence;
 }
 
+type Mode = "today" | "drill";
+
 // 진행 중 세션을 sessionStorage에 보관 → 새로고침/앱 전환 후에도 이어풀기
 const SESSION_KEY = "sqld.session";
 
 interface SavedSession {
+  mode: Mode;
   ids: string[];
   cursor: number;
   // 문제별 답안 (재기록 방지 · 이어풀기 복원용)
@@ -25,6 +28,13 @@ interface SavedSession {
     string,
     { selectedIndex: number; isCorrect: boolean; confidence: Confidence }
   >;
+}
+
+function requestedMode(): Mode {
+  if (typeof window === "undefined") return "today";
+  return new URLSearchParams(window.location.search).get("mode") === "drill"
+    ? "drill"
+    : "today";
 }
 
 function loadSession(): SavedSession | null {
@@ -62,9 +72,11 @@ export default function StudyPage() {
         .filter((r) => new Date(r.dueAt).getTime() <= Date.now())
         .map((r) => r.questionId)
     );
+    const mode = requestedMode();
     const saved = loadSession();
     const valid =
       saved &&
+      saved.mode === mode && // 모드가 다르면 새로 구성
       Array.isArray(saved.ids) &&
       saved.ids.length > 0 &&
       saved.answers != null &&
@@ -74,9 +86,11 @@ export default function StudyPage() {
       setSession(saved);
       return;
     }
-    const ids = buildTodaySet({ questions, attempts, reviews, settings })
-      .questionIds;
-    const fresh: SavedSession = { ids, cursor: 0, answers: {} };
+    const ids =
+      mode === "drill"
+        ? buildWeakDrillSet({ questions, attempts, settings }).questionIds
+        : buildTodaySet({ questions, attempts, reviews, settings }).questionIds;
+    const fresh: SavedSession = { mode, ids, cursor: 0, answers: {} };
     setSession(fresh);
     if (ids.length > 0) saveSession(fresh);
   }, [ready, attempts, reviews, settings, qMap]);
@@ -135,14 +149,24 @@ export default function StudyPage() {
   }
 
   const existing = answers[q.id];
+  const focusCat = qMap.get(ids[0])?.category;
 
   return (
-    <QuestionCard
-      key={q.id}
-      question={q}
-      index={cursor}
-      total={ids.length}
-      isReview={dueRef.current.has(q.id)}
+    <>
+      {session.mode === "drill" && focusCat && (
+        <div className="mb-2 flex items-center gap-2 rounded-xl border border-accent-200 bg-accent-50 px-3 py-2 text-xs font-semibold text-accent-ink">
+          <span>🎯 취약 유형 특훈</span>
+          <span className="chip bg-white text-slate-600">
+            {CATEGORY_LABEL[focusCat]} 집중
+          </span>
+        </div>
+      )}
+      <QuestionCard
+        key={q.id}
+        question={q}
+        index={cursor}
+        total={ids.length}
+        isReview={dueRef.current.has(q.id)}
       isLast={cursor === ids.length - 1}
       initialAnswer={
         existing
@@ -177,7 +201,8 @@ export default function StudyPage() {
       onNext={() =>
         setSession((s) => (s ? { ...s, cursor: s.cursor + 1 } : s))
       }
-    />
+      />
+    </>
   );
 }
 
