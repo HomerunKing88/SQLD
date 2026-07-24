@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useStore } from "@/lib/store";
 import ConfirmModal from "@/components/ConfirmModal";
+import { SQLD_EXAMS } from "@/data/examSchedule";
+import { daysUntil, ddayLabel } from "@/lib/dday";
 
 export default function SettingsPage() {
   const { ready, settings, saveSettings, resetAll, exportBundle, importBundle } =
@@ -66,6 +68,18 @@ export default function SettingsPage() {
     setTimeout(() => setSaved(false), 1500);
   }
 
+  // 회차 선택 시 즉시 반영(시험일 저장)
+  function pickSession(date: string) {
+    setExamDate(date);
+    saveSettings({
+      examDate: date,
+      dailyGoal: Math.min(25, Math.max(5, dailyGoal)),
+      sqlWeight: Math.min(1, Math.max(0, sqlWeight / 100)),
+    });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1500);
+  }
+
   return (
     <div className="space-y-4">
       <header>
@@ -74,8 +88,54 @@ export default function SettingsPage() {
 
       <div className="card space-y-4">
         <div>
+          <label className="mb-2 block text-sm font-semibold text-slate-700">
+            시험 회차 선택 (2026 SQLD)
+          </label>
+          <div className="space-y-2">
+            {SQLD_EXAMS.map((s) => {
+              const dday = daysUntil(s.date);
+              const past = dday !== null && dday < 0;
+              const selected = examDate === s.date;
+              return (
+                <button
+                  key={s.round}
+                  onClick={() => pickSession(s.date)}
+                  disabled={past}
+                  className={`flex w-full items-center justify-between rounded-xl border p-3 text-left transition ${
+                    selected
+                      ? "border-brand-500 bg-brand-50"
+                      : "border-slate-200 bg-white active:bg-slate-50"
+                  } ${past ? "opacity-40" : ""}`}
+                >
+                  <span>
+                    <span className="text-sm font-bold text-slate-800">
+                      {s.label}
+                    </span>
+                    <span className="ml-2 text-xs text-slate-400">{s.date}</span>
+                  </span>
+                  <span
+                    className={`chip ${
+                      selected
+                        ? "bg-brand-500 text-white"
+                        : past
+                          ? "bg-slate-100 text-slate-400"
+                          : "bg-accent-100 text-accent-ink"
+                    }`}
+                  >
+                    {past ? "종료" : ddayLabel(dday)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-1 text-xs text-slate-400">
+            회차를 고르면 시험일이 자동 설정됩니다. (접수는 통상 시험 4~5주 전)
+          </p>
+        </div>
+
+        <div>
           <label className="mb-1 block text-sm font-semibold text-slate-700">
-            시험일 (D-day)
+            직접 입력 (다른 연도·재시험 등)
           </label>
           <input
             type="date"

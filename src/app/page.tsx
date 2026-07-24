@@ -9,6 +9,7 @@ import { estimateScore, accuracyByCategoryWith } from "@/lib/scoring";
 import { dueReviewIds } from "@/lib/srs";
 import { dailyProgress } from "@/lib/streak";
 import { CATEGORY_LABEL, type Category } from "@/lib/types";
+import { sessionForDate } from "@/data/examSchedule";
 
 export default function HomePage() {
   const { ready, settings, attempts, reviews, mocks } = useStore();
@@ -61,7 +62,11 @@ export default function HomePage() {
         <div className="rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 p-5 text-white shadow-card">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs font-medium text-brand-100">시험까지</p>
+              <p className="text-xs font-medium text-brand-100">
+                시험까지
+                {sessionForDate(settings.examDate) &&
+                  ` · ${sessionForDate(settings.examDate)!.label}`}
+              </p>
               <p className="mt-1 inline-block text-4xl font-black tracking-tight">
                 {ddayLabel(dday)}
                 <span className="mt-1 block h-1 w-12 rounded-full bg-accent-400" />
