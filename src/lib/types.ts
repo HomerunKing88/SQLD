@@ -26,6 +26,12 @@ export interface SqlStep {
 export interface SqlSteps {
   query: string;
   steps: SqlStep[];
+  /**
+   * 앞에서부터 몇 개의 step이 '주어진 데이터(전제)'인지.
+   * 이 수만큼의 step은 정답 확인 전에도 보여준다(문제를 풀 수 있도록).
+   * 나머지 step(중간 과정·결과)은 정답을 노출하므로 제출 후에만 공개.
+   */
+  givenCount?: number;
 }
 
 export interface Question {

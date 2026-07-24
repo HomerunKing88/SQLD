@@ -7,7 +7,7 @@ import {
   CONFIDENCE_LABEL,
   SUBJECT_LABEL,
 } from "@/lib/types";
-import SqlSteps from "./SqlSteps";
+import SqlSteps, { SqlGiven } from "./SqlSteps";
 
 const CONF_STYLE: Record<Confidence, string> = {
   sure: "bg-brand-100 text-brand-700 border-brand-300",
@@ -95,6 +95,14 @@ export default function QuestionCard({
             {question.stem}
           </p>
         </div>
+
+        {/* 주어진 데이터(전제) — 결과 예측형 문항은 풀기 전에 표를 제공 */}
+        {question.sqlSteps?.givenCount ? (
+          <div className="card mt-3">
+            <p className="mb-2 text-xs font-bold text-slate-500">주어진 데이터</p>
+            <SqlGiven steps={question.sqlSteps} />
+          </div>
+        ) : null}
 
         {/* 보기 */}
         <div className="mt-3 space-y-2">
