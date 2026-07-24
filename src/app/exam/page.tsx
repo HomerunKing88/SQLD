@@ -60,6 +60,7 @@ export default function ExamPage() {
   const [nowMs, setNowMs] = useState<number>(() => Date.now());
   const [showNav, setShowNav] = useState(false);
   const [confirmSubmit, setConfirmSubmit] = useState(false);
+  const [confirmAbort, setConfirmAbort] = useState(false);
   const inited = useRef(false);
   const submittedRef = useRef(false);
 
@@ -199,8 +200,14 @@ export default function ExamPage() {
 
   return (
     <div className="flex min-h-[calc(100vh-8rem)] flex-col">
-      {/* 상단: 타이머 + 진행 */}
+      {/* 상단: 나가기 + 진행 + 타이머 */}
       <div className="mb-2 flex items-center justify-between">
+        <button
+          className="text-xs font-semibold text-slate-400"
+          onClick={() => setConfirmAbort(true)}
+        >
+          ✕ 나가기
+        </button>
         <span className="text-xs text-slate-500">
           {exam.cursor + 1} / {total} · 응답 {answeredCount}
         </span>
@@ -313,6 +320,24 @@ export default function ExamPage() {
           submit();
         }}
         onCancel={() => setConfirmSubmit(false)}
+      />
+
+      {/* 중단 확인 모달 — 채점하지 않고 종료 */}
+      <ConfirmModal
+        open={confirmAbort}
+        title="모의고사를 중단할까요?"
+        message="지금 나가면 채점되지 않고 기록도 남지 않습니다."
+        confirmLabel="중단하고 나가기"
+        cancelLabel="계속 풀기"
+        tone="danger"
+        onConfirm={() => {
+          setConfirmAbort(false);
+          clearExam();
+          submittedRef.current = false;
+          setExam(null);
+          setPhase("intro");
+        }}
+        onCancel={() => setConfirmAbort(false)}
       />
 
       {/* 하단 고정: 문항/제출 + 이전/다음 */}

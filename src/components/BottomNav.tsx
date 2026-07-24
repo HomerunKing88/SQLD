@@ -29,7 +29,9 @@ export default function BottomNav() {
                 active ? "text-brand-600" : "text-slate-500"
               }`}
             >
-              <span className="text-lg leading-none">{t.icon}</span>
+              <span aria-hidden="true" className="text-lg leading-none">
+                {t.icon}
+              </span>
               <span className={active ? "font-semibold" : ""}>{t.label}</span>
             </Link>
           );

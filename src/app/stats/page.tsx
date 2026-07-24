@@ -58,7 +58,9 @@ export default function StatsPage() {
         <div className="flex items-center justify-between">
           <p className="text-sm font-bold text-slate-500">예상 점수</p>
           {!score.enoughSample && (
-            <span className="chip bg-accent-100 text-accent-ink">표본 부족</span>
+            <span className="chip bg-accent-100 text-accent-ink">
+              몇 문제 더 풀면 정확해져요
+            </span>
           )}
         </div>
         <p className="mt-1 text-4xl font-black text-brand-700">
