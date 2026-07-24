@@ -167,14 +167,14 @@ SQLD 출제 기준(과목 구조)에 맞춘 분류 체계.
 
 - **기본**: 브라우저 `localStorage` (오프라인·무로그인). `repository` 인터페이스로 추상화.
 - **선택**: `.env`에 Supabase 키가 있으면 클라우드 동기화 구현으로 교체 가능(스키마·시드 SQL 제공).
-- 문제 원본(seed 20문항)은 앱 번들에 포함되어 오프라인에서도 항상 사용 가능.
+- 문제 원본(seed 60문항, SQL 44 : 모델링 16)은 앱 번들에 포함되어 오프라인에서도 항상 사용 가능.
 
 구조:
 ```
 lib/repository.ts        // 인터페이스 + 로컬(localStorage) 구현
 lib/srs.ts               // 복습 간격 계산
 lib/scoring.ts           // 예상점수·정답률
-data/questions.ts        // seed 20문항
+data/questions.ts        // seed 60문항 (요약본 기반)
 supabase/schema.sql      // (선택) 테이블 DDL
 supabase/seed.sql        // (선택) 문제 시드
 ```
