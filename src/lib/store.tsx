@@ -15,7 +15,7 @@ import type {
   Review,
   Settings,
 } from "./types";
-import { repository } from "./repository";
+import { repository, DEFAULT_SETTINGS } from "./repository";
 import { nextReviewOnAnswer, scheduleOnWrong } from "./srs";
 import { scoreMock } from "./mock";
 import { QUESTIONS } from "@/data/questions";
@@ -62,7 +62,8 @@ function ensureExamDate(s: Settings): Settings {
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
-  const [settings, setSettings] = useState<Settings>(repository.getSettings());
+  // 초기값은 상수(SSR/hydration 일관). 실제 값은 아래 effect에서 로드.
+  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [mocks, setMocks] = useState<MockResult[]>([]);
@@ -163,10 +164,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   );
 
   const resetAll = useCallback(() => {
-    repository.reset();
-    const s = ensureExamDate(repository.getSettings());
-    repository.saveSettings(s);
-    setSettings(s);
+    // 학습 기록만 초기화. 시험일·목표 등 설정은 보존한다.
+    repository.resetProgress();
     setAttempts([]);
     setReviews([]);
     setMocks([]);

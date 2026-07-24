@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { questions, useStore } from "@/lib/store";
 import {
   buildMockExam,
+  DEFAULT_MOCK,
   formatClock,
   formatDuration,
   mockTimeLimitSec,
@@ -64,10 +65,16 @@ export default function ExamPage() {
       saved &&
       Array.isArray(saved.ids) &&
       saved.ids.length > 0 &&
+      typeof saved.cursor === "number" &&
+      saved.cursor >= 0 &&
+      saved.cursor < saved.ids.length &&
+      saved.selected != null &&
       saved.ids.every((id) => qMap.has(id))
     ) {
       setExam(saved);
       setPhase("exam");
+    } else {
+      clearExam();
     }
   }, [ready, qMap]);
 
@@ -120,11 +127,13 @@ export default function ExamPage() {
 
   // ── 시작 화면 ──
   if (phase === "intro" || !exam) {
-    const previewIds = buildMockExam(questions);
-    const count = previewIds.length;
-    const dm = previewIds.filter(
-      (id) => qMap.get(id)?.subject === "data_modeling"
+    // 구성은 결정적으로 계산(렌더에서 Math.random 사용 금지). 셔플은 시작 시에만.
+    const dmAvail = questions.filter(
+      (q) => q.subject === "data_modeling"
     ).length;
+    const sqlAvail = questions.filter((q) => q.subject === "sql").length;
+    const dm = Math.min(DEFAULT_MOCK.modeling, dmAvail);
+    const count = dm + Math.min(DEFAULT_MOCK.sql, sqlAvail);
     const start = () => {
       const ids = buildMockExam(questions);
       const s: ExamState = { ids, selected: {}, cursor: 0, startedAt: Date.now() };

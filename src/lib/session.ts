@@ -84,8 +84,12 @@ export function buildTodaySet(input: BuildInput): TodaySet {
   const chosen = new Set<string>(due.slice(0, goal));
 
   // 2) 신규(아직 안 푼) 문제로 채우기 — SQL 가중 + 취약 유형 우선
+  //    '푼 문제' 판정은 학습(study) 기준. 모의고사로 스친 문항까지 신규에서 빼면
+  //    신규 문제가 급격히 고갈되므로 mock은 제외한다.
   const weakness = categoryWeakness(attempts, byId);
-  const attemptedIds = new Set(attempts.map((a) => a.questionId));
+  const attemptedIds = new Set(
+    attempts.filter((a) => a.source !== "mock").map((a) => a.questionId)
+  );
   const fresh = byWeakness(
     questions.filter((q) => !attemptedIds.has(q.id) && !chosen.has(q.id)),
     weakness

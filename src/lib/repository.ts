@@ -28,7 +28,12 @@ function read<T>(key: string, fallback: T): T {
 
 function write<T>(key: string, value: T): void {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(key, JSON.stringify(value));
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // 저장 실패(쿼터 초과 / iOS 프라이빗 모드)에도 앱 흐름이 끊기지 않도록 무시.
+    // 데이터는 메모리 상태로 유지되며, 백업(내보내기)으로 대비한다.
+  }
 }
 
 export const repository = {
@@ -75,12 +80,19 @@ export const repository = {
     write(KEYS.settings, s);
   },
 
-  reset(): void {
+  /** 학습 기록만 초기화(설정·시험일은 유지) */
+  resetProgress(): void {
     if (typeof window === "undefined") return;
     window.localStorage.removeItem(KEYS.attempts);
     window.localStorage.removeItem(KEYS.reviews);
-    window.localStorage.removeItem(KEYS.settings);
     window.localStorage.removeItem(KEYS.mocks);
+  },
+
+  /** 전체 초기화(설정 포함) */
+  reset(): void {
+    if (typeof window === "undefined") return;
+    repository.resetProgress();
+    window.localStorage.removeItem(KEYS.settings);
   },
 };
 

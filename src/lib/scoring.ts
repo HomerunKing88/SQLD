@@ -2,6 +2,14 @@
 import type { Attempt, Question, Subject, Category } from "./types";
 import { CATEGORY_SUBJECT } from "./types";
 
+/**
+ * 학습(study) 풀이만. 모의고사(mock) 풀이는 예상점수·정답률에서 제외한다.
+ * (모의고사 성적은 MockResult로 별도 관리 — 한 번의 시험이 학습 지표를 덮어쓰지 않도록)
+ */
+export function studyAttempts(attempts: Attempt[]): Attempt[] {
+  return attempts.filter((a) => a.source !== "mock");
+}
+
 /** 문제별 "최신 풀이 결과"만 남긴다 (같은 문제 여러 번 풀면 마지막만 반영) */
 export function latestAttempts(attempts: Attempt[]): Map<string, Attempt> {
   const byQ = new Map<string, Attempt>();
@@ -31,7 +39,7 @@ export function accuracyBySubject(
   questions: Question[]
 ): Record<Subject, Accuracy> {
   const qMap = new Map(questions.map((q) => [q.id, q]));
-  const latest = [...latestAttempts(attempts).values()];
+  const latest = [...latestAttempts(studyAttempts(attempts)).values()];
   const group = (s: Subject) =>
     latest.filter((a) => qMap.get(a.questionId)?.subject === s);
   return {
@@ -46,7 +54,7 @@ export function accuracyByCategoryWith(
   questions: Question[]
 ): Partial<Record<Category, Accuracy>> {
   const qMap = new Map(questions.map((q) => [q.id, q]));
-  const latest = [...latestAttempts(attempts).values()];
+  const latest = [...latestAttempts(studyAttempts(attempts)).values()];
   const out: Partial<Record<Category, Accuracy>> = {};
   const cats = new Set<Category>();
   latest.forEach((a) => {
@@ -67,7 +75,7 @@ export function accuracyByTag(
   questions: Question[]
 ): Map<string, Accuracy> {
   const qMap = new Map(questions.map((q) => [q.id, q]));
-  const latest = [...latestAttempts(attempts).values()];
+  const latest = [...latestAttempts(studyAttempts(attempts)).values()];
   const agg = new Map<string, { c: number; t: number }>();
   for (const a of latest) {
     const q = qMap.get(a.questionId);

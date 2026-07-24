@@ -78,7 +78,10 @@ export function dailyProgress(
   goal: number,
   now: Date = new Date()
 ): DailyProgress {
-  const done = todayUniqueCount(attempts, now);
+  // 오늘의 목표 진행은 '학습' 풀이만 집계(모의고사 50문항이 목표를 자동 달성하지 않도록).
+  // 스트릭(연속 학습일)은 모의고사도 학습 활동으로 인정해 전체 기준으로 계산.
+  const study = attempts.filter((a) => a.source !== "mock");
+  const done = todayUniqueCount(study, now);
   const g = Math.max(1, goal);
   return {
     done,
