@@ -1126,4 +1126,234 @@ export const QUESTIONS: Question[] = [
       "GRANT=부여, REVOKE=회수, ROLE=권한 묶음. WITH GRANT OPTION은 권한을 받은 사용자가 다시 다른 사용자에게 그 권한을 부여할 수 있게 한다.",
     tags: ["DCL", "GRANT", "WITH GRANT OPTION"],
   },
+
+  // ═══════════════ 결과 예측형 + 단계별 실행 (q061~q064) ═══════════════
+  {
+    id: "q061",
+    subject: "sql",
+    category: "sql_advanced",
+    difficulty: 2,
+    stem: "다음 LEFT OUTER JOIN의 결과 행 수는? (아래 '단계별 결과' 참고)",
+    choices: ["3행", "4행", "5행", "6행"],
+    answerIndex: 1,
+    explanation:
+      "LEFT OUTER JOIN은 왼쪽(customer) 행을 모두 보존한다. Kim은 주문 2건, Lee는 1건, Park는 주문이 없어 amount가 NULL인 1행이 남는다. 2 + 1 + 1 = 4행.",
+    tags: ["OUTER JOIN", "LEFT JOIN"],
+    sqlSteps: {
+      query:
+        "SELECT c.name, o.amount FROM customer c LEFT JOIN orders o ON c.id = o.cust_id",
+      steps: [
+        {
+          clause: "FROM (customer)",
+          desc: "왼쪽 테이블 customer.",
+          table: {
+            columns: ["id", "name"],
+            data: [
+              [1, "Kim"],
+              [2, "Lee"],
+              [3, "Park"],
+            ],
+          },
+        },
+        {
+          clause: "orders (참조 테이블)",
+          desc: "오른쪽 테이블 orders (cust_id가 customer.id를 참조).",
+          table: {
+            columns: ["id", "cust_id", "amount"],
+            data: [
+              [10, 1, 500],
+              [11, 1, 300],
+              [12, 2, 700],
+            ],
+          },
+        },
+        {
+          clause: "LEFT OUTER JOIN",
+          desc: "c.id = o.cust_id 매칭. 왼쪽 행은 모두 보존 → Park는 짝이 없어 NULL.",
+          table: {
+            columns: ["name", "amount"],
+            data: [
+              ["Kim", 500],
+              ["Kim", 300],
+              ["Lee", 700],
+              ["Park", null],
+            ],
+          },
+        },
+        {
+          clause: "SELECT",
+          desc: "c.name, o.amount 출력 → 4행.",
+          table: {
+            columns: ["name", "amount"],
+            data: [
+              ["Kim", 500],
+              ["Kim", 300],
+              ["Lee", 700],
+              ["Park", null],
+            ],
+          },
+        },
+      ],
+    },
+  },
+  {
+    id: "q062",
+    subject: "sql",
+    category: "sql_advanced",
+    difficulty: 3,
+    stem: "부서가 2개일 때 GROUP BY ROLLUP(dept)의 결과 행 수는? (단계별 결과 참고)",
+    choices: ["2행", "3행", "4행", "5행"],
+    answerIndex: 1,
+    explanation:
+      "ROLLUP(dept)는 부서별 소계에 '전체 총계' 1행을 더한다. 부서 2개 → 소계 2행 + 총계 1행 = 3행. 총계 행의 dept는 NULL로 표시된다.",
+    tags: ["ROLLUP", "그룹함수", "소계"],
+    sqlSteps: {
+      query: "SELECT dept, SUM(sal) FROM emp GROUP BY ROLLUP(dept)",
+      steps: [
+        {
+          clause: "FROM (emp)",
+          desc: "emp 테이블을 읽는다.",
+          table: {
+            columns: ["name", "dept", "sal"],
+            data: [
+              ["Kim", "SALES", 300],
+              ["Lee", "SALES", 200],
+              ["Park", "DEV", 400],
+            ],
+          },
+        },
+        {
+          clause: "GROUP BY dept",
+          desc: "부서별로 SUM(sal) 집계.",
+          table: {
+            columns: ["dept", "SUM(sal)"],
+            data: [
+              ["SALES", 500],
+              ["DEV", 400],
+            ],
+          },
+        },
+        {
+          clause: "ROLLUP (총계 추가)",
+          desc: "부서 소계에 전체 총계(dept=NULL) 1행을 더한다.",
+          table: {
+            columns: ["dept", "SUM(sal)"],
+            data: [
+              ["SALES", 500],
+              ["DEV", 400],
+              [null, 900],
+            ],
+          },
+        },
+        {
+          clause: "SELECT",
+          desc: "최종 3행 (소계 2 + 총계 1).",
+          table: {
+            columns: ["dept", "SUM(sal)"],
+            data: [
+              ["SALES", 500],
+              ["DEV", 400],
+              [null, 900],
+            ],
+          },
+        },
+      ],
+    },
+  },
+  {
+    id: "q063",
+    subject: "sql",
+    category: "sql_advanced",
+    difficulty: 3,
+    stem: "다음 셀프 조인(사원-관리자)의 결과 행 수는? (단계별 결과 참고)",
+    choices: ["2행", "3행", "4행", "5행"],
+    answerIndex: 1,
+    explanation:
+      "e.mgr_id = m.id 로 자기 자신과 조인한다. mgr_id가 NULL인 Kim은 INNER JOIN 매칭에서 제외되고, 나머지 3명(Lee·Park·Han)만 관리자와 짝지어져 3행이 된다.",
+    tags: ["SELF JOIN", "INNER JOIN"],
+    sqlSteps: {
+      query:
+        "SELECT e.name AS emp, m.name AS mgr FROM emp e JOIN emp m ON e.mgr_id = m.id",
+      steps: [
+        {
+          clause: "FROM emp e (자기 자신)",
+          desc: "동일 테이블을 사원(e) 관점으로 본다.",
+          table: {
+            columns: ["id", "name", "mgr_id"],
+            data: [
+              [1, "Kim", null],
+              [2, "Lee", 1],
+              [3, "Park", 1],
+              [4, "Han", 2],
+            ],
+          },
+        },
+        {
+          clause: "JOIN emp m ON e.mgr_id = m.id",
+          desc: "관리자(m)와 매칭. Kim은 mgr_id가 NULL이라 짝이 없어 탈락.",
+          table: {
+            columns: ["emp", "mgr"],
+            data: [
+              ["Lee", "Kim"],
+              ["Park", "Kim"],
+              ["Han", "Lee"],
+            ],
+          },
+        },
+        {
+          clause: "SELECT",
+          desc: "사원-관리자 3쌍 출력 → 3행.",
+          table: {
+            columns: ["emp", "mgr"],
+            data: [
+              ["Lee", "Kim"],
+              ["Park", "Kim"],
+              ["Han", "Lee"],
+            ],
+          },
+        },
+      ],
+    },
+  },
+  {
+    id: "q064",
+    subject: "sql",
+    category: "sql_advanced",
+    difficulty: 2,
+    stem: "두 조회 결과를 UNION 했을 때의 행 수는? (단계별 결과 참고)",
+    choices: ["2행", "3행", "4행", "5행"],
+    answerIndex: 1,
+    explanation:
+      "UNION은 두 집합을 합친 뒤 중복을 제거한다(정렬 수반). 'DEV'가 양쪽에 있어 하나로 합쳐져 SALES·DEV·HR 3행이 된다. UNION ALL이었다면 중복을 그대로 두어 4행.",
+    tags: ["집합연산", "UNION", "UNION ALL"],
+    sqlSteps: {
+      query:
+        "SELECT job FROM emp WHERE dept='SALES' UNION SELECT job FROM emp WHERE dept='DEV'",
+      steps: [
+        {
+          clause: "쿼리1 결과",
+          desc: "SALES 부서의 job.",
+          table: { columns: ["job"], data: [["관리"], ["영업"]] },
+        },
+        {
+          clause: "쿼리2 결과",
+          desc: "DEV 부서의 job.",
+          table: { columns: ["job"], data: [["영업"], ["개발"]] },
+        },
+        {
+          clause: "UNION ALL (단순 결합)",
+          desc: "먼저 그냥 합치면 중복 '영업' 포함 4행.",
+          table: {
+            columns: ["job"],
+            data: [["관리"], ["영업"], ["영업"], ["개발"]],
+          },
+        },
+        {
+          clause: "UNION (중복 제거)",
+          desc: "중복 '영업'을 제거 → 3행.",
+          table: { columns: ["job"], data: [["관리"], ["영업"], ["개발"]] },
+        },
+      ],
+    },
+  },
 ];
