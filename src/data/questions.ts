@@ -154,7 +154,7 @@ export const QUESTIONS: Question[] = [
     subject: "sql",
     category: "sql_basics",
     difficulty: 2,
-    stem: "다음 쿼리의 단계별 결과를 참고할 때 최종 출력 행 수는? (아래 '단계별 결과' 참고)",
+    stem: "아래 emp 테이블에 다음 쿼리를 실행할 때 최종 출력 행 수는? (주어진 데이터 참고)",
     choices: ["1행", "2행", "3행", "4행"],
     answerIndex: 1,
     explanation:
@@ -163,6 +163,7 @@ export const QUESTIONS: Question[] = [
     sqlSteps: {
       query:
         "SELECT dept, COUNT(*) AS cnt FROM emp WHERE sal >= 250 GROUP BY dept HAVING COUNT(*) >= 2 ORDER BY cnt DESC",
+      givenCount: 1,
       steps: [
         {
           clause: "FROM / JOIN",
@@ -263,7 +264,7 @@ export const QUESTIONS: Question[] = [
     subject: "sql",
     category: "sql_advanced",
     difficulty: 2,
-    stem: "다음 조인 결과를 참고할 때, INNER JOIN 결과 행 수는? (단계별 결과 참고)",
+    stem: "다음 조인 결과를 참고할 때, INNER JOIN 결과 행 수는? (주어진 데이터 참고)",
     choices: ["2행", "3행", "4행", "5행"],
     answerIndex: 1,
     explanation:
@@ -272,6 +273,7 @@ export const QUESTIONS: Question[] = [
     sqlSteps: {
       query:
         "SELECT e.name, d.dname FROM emp e INNER JOIN dept d ON e.dept_id = d.id",
+      givenCount: 1,
       steps: [
         {
           clause: "FROM / JOIN",
@@ -1133,7 +1135,7 @@ export const QUESTIONS: Question[] = [
     subject: "sql",
     category: "sql_advanced",
     difficulty: 2,
-    stem: "다음 LEFT OUTER JOIN의 결과 행 수는? (아래 '단계별 결과' 참고)",
+    stem: "다음 LEFT OUTER JOIN의 결과 행 수는? (아래 주어진 데이터 참고)",
     choices: ["3행", "4행", "5행", "6행"],
     answerIndex: 1,
     explanation:
@@ -1142,6 +1144,7 @@ export const QUESTIONS: Question[] = [
     sqlSteps: {
       query:
         "SELECT c.name, o.amount FROM customer c LEFT JOIN orders o ON c.id = o.cust_id",
+      givenCount: 2,
       steps: [
         {
           clause: "FROM (customer)",
@@ -1201,7 +1204,7 @@ export const QUESTIONS: Question[] = [
     subject: "sql",
     category: "sql_advanced",
     difficulty: 3,
-    stem: "부서가 2개일 때 GROUP BY ROLLUP(dept)의 결과 행 수는? (단계별 결과 참고)",
+    stem: "부서가 2개일 때 GROUP BY ROLLUP(dept)의 결과 행 수는? (주어진 데이터 참고)",
     choices: ["2행", "3행", "4행", "5행"],
     answerIndex: 1,
     explanation:
@@ -1209,6 +1212,7 @@ export const QUESTIONS: Question[] = [
     tags: ["ROLLUP", "그룹함수", "소계"],
     sqlSteps: {
       query: "SELECT dept, SUM(sal) FROM emp GROUP BY ROLLUP(dept)",
+      givenCount: 1,
       steps: [
         {
           clause: "FROM (emp)",
@@ -1265,7 +1269,7 @@ export const QUESTIONS: Question[] = [
     subject: "sql",
     category: "sql_advanced",
     difficulty: 3,
-    stem: "다음 셀프 조인(사원-관리자)의 결과 행 수는? (단계별 결과 참고)",
+    stem: "다음 셀프 조인(사원-관리자)의 결과 행 수는? (주어진 데이터 참고)",
     choices: ["2행", "3행", "4행", "5행"],
     answerIndex: 1,
     explanation:
@@ -1274,6 +1278,7 @@ export const QUESTIONS: Question[] = [
     sqlSteps: {
       query:
         "SELECT e.name AS emp, m.name AS mgr FROM emp e JOIN emp m ON e.mgr_id = m.id",
+      givenCount: 1,
       steps: [
         {
           clause: "FROM emp e (자기 자신)",
@@ -1320,7 +1325,7 @@ export const QUESTIONS: Question[] = [
     subject: "sql",
     category: "sql_advanced",
     difficulty: 2,
-    stem: "두 조회 결과를 UNION 했을 때의 행 수는? (단계별 결과 참고)",
+    stem: "두 조회 결과를 UNION 했을 때의 행 수는? (주어진 데이터 참고)",
     choices: ["2행", "3행", "4행", "5행"],
     answerIndex: 1,
     explanation:
@@ -1329,6 +1334,7 @@ export const QUESTIONS: Question[] = [
     sqlSteps: {
       query:
         "SELECT job FROM emp WHERE dept='SALES' UNION SELECT job FROM emp WHERE dept='DEV'",
+      givenCount: 2,
       steps: [
         {
           clause: "쿼리1 결과",
@@ -1639,7 +1645,7 @@ export const QUESTIONS: Question[] = [
     subject: "sql",
     category: "sql_advanced",
     difficulty: 2,
-    stem: "점수 [90, 90, 80, 70]에 대한 RANK()와 DENSE_RANK() 결과 쌍으로 옳은 것은? (단계별 결과 참고)",
+    stem: "점수 [90, 90, 80, 70]에 대한 RANK()와 DENSE_RANK() 결과 쌍으로 옳은 것은? (주어진 데이터 참고)",
     choices: [
       "RANK 1,1,3,4 / DENSE 1,1,2,3",
       "RANK 1,1,2,3 / DENSE 1,1,3,4",
@@ -1653,6 +1659,7 @@ export const QUESTIONS: Question[] = [
     sqlSteps: {
       query:
         "SELECT name, score, RANK() OVER(ORDER BY score DESC) rnk, DENSE_RANK() OVER(ORDER BY score DESC) drnk FROM t",
+      givenCount: 1,
       steps: [
         {
           clause: "FROM (t)",
@@ -2700,7 +2707,7 @@ export const QUESTIONS: Question[] = [
     subject: "sql",
     category: "sql_advanced",
     difficulty: 2,
-    stem: "A={1,2,3}, B={2,3,4} 일 때 A INTERSECT B 의 결과는? (단계별 결과 참고)",
+    stem: "A={1,2,3}, B={2,3,4} 일 때 A INTERSECT B 의 결과는? (주어진 데이터 참고)",
     choices: ["{2, 3}", "{1, 2, 3, 4}", "{1, 4}", "{1}"],
     answerIndex: 0,
     explanation:
@@ -2708,6 +2715,7 @@ export const QUESTIONS: Question[] = [
     tags: ["기출유형", "집합연산", "INTERSECT"],
     sqlSteps: {
       query: "SELECT n FROM a INTERSECT SELECT n FROM b",
+      givenCount: 2,
       steps: [
         {
           clause: "쿼리1 (a)",

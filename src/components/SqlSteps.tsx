@@ -42,6 +42,30 @@ function Table({ table }: { table: SqlStepTable }) {
   );
 }
 
+/** 정답 확인 전에 보여줄 '주어진 데이터'(전제). givenCount 만큼의 앞 step만 노출. */
+export function SqlGiven({ steps }: { steps: SqlStepsType }) {
+  const n = steps.givenCount ?? 0;
+  if (n <= 0) return null;
+  const given = steps.steps.slice(0, n);
+  return (
+    <div>
+      <div className="overflow-x-auto rounded-lg bg-slate-900 p-3 font-mono text-xs leading-relaxed text-slate-100">
+        {steps.query}
+      </div>
+      <div className="mt-2 space-y-3">
+        {given.map((s, idx) => (
+          <div key={idx}>
+            <span className="chip bg-slate-100 text-xs text-slate-600">
+              {s.clause}
+            </span>
+            <Table table={s.table} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function SqlSteps({ steps }: { steps: SqlStepsType }) {
   const [open, setOpen] = useState<number | null>(0);
   return (
