@@ -41,6 +41,29 @@ export interface Question {
   tags: string[];
 }
 
+/** 빈출 개념 카드(플래시카드) — 이동 중 반복 암기용 */
+export interface Concept {
+  id: string;
+  category: Category;
+  title: string; // 개념명(앞면 큰 제목)
+  front: string; // 앞면 자문 프롬프트(핵심 질문)
+  summary: string; // 뒷면 핵심 요약
+  trap?: string; // 함정 포인트
+  example?: string; // 빠른 예제(정답 포함)
+  tags: string[];
+}
+
+/** 카드 자가채점 등급 */
+export type CardRating = "again" | "ok" | "known";
+
+/** 개념 카드 학습 진행(개념당 1행) — 점수 통계와 분리 */
+export interface CardProgress {
+  conceptId: string;
+  rating: CardRating;
+  seenCount: number;
+  updatedAt: string; // ISO
+}
+
 export interface Attempt {
   id: string;
   questionId: string;

@@ -10,6 +10,8 @@ import {
 } from "react";
 import type {
   Attempt,
+  CardProgress,
+  CardRating,
   Confidence,
   MockResult,
   Review,
@@ -26,6 +28,10 @@ interface StoreValue {
   attempts: Attempt[];
   reviews: Review[];
   mocks: MockResult[];
+  /** 개념 카드 진행(개념id → 진행). 점수 통계와 분리 */
+  cardProgress: Record<string, CardProgress>;
+  /** 개념 카드 자가채점 기록 */
+  markCard: (conceptId: string, rating: CardRating) => void;
   saveSettings: (s: Settings) => void;
   /** 채점 처리: attempt 저장 + 복습 스케줄 갱신 */
   submitAnswer: (args: {
@@ -63,6 +69,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [mocks, setMocks] = useState<MockResult[]>([]);
+  const [cardProgress, setCardProgress] = useState<
+    Record<string, CardProgress>
+  >({});
 
   useEffect(() => {
     // 시험일은 자동으로 채우지 않는다(가짜 D-day 방지). 사용자가 설정에서 지정.
@@ -70,12 +79,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setAttempts(repository.getAttempts());
     setReviews(repository.getReviews());
     setMocks(repository.getMocks());
+    setCardProgress(repository.getCardProgress());
     setReady(true);
   }, []);
 
   const saveSettings = useCallback((s: Settings) => {
     repository.saveSettings(s);
     setSettings(s);
+  }, []);
+
+  const markCard = useCallback((conceptId: string, rating: CardRating) => {
+    repository.markCard(conceptId, rating);
+    setCardProgress(repository.getCardProgress());
   }, []);
 
   const submitAnswer: StoreValue["submitAnswer"] = useCallback(
@@ -170,6 +185,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         setAttempts(repository.getAttempts());
         setReviews(repository.getReviews());
         setMocks(repository.getMocks());
+        setCardProgress(repository.getCardProgress());
         setSettings(repository.getSettings());
       }
       return ok;
@@ -184,6 +200,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setAttempts([]);
     setReviews([]);
     setMocks([]);
+    setCardProgress({});
   }, []);
 
   const value = useMemo<StoreValue>(
@@ -193,6 +210,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       attempts,
       reviews,
       mocks,
+      cardProgress,
+      markCard,
       saveSettings,
       submitAnswer,
       finishMock,
@@ -206,6 +225,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       attempts,
       reviews,
       mocks,
+      cardProgress,
+      markCard,
       saveSettings,
       submitAnswer,
       finishMock,

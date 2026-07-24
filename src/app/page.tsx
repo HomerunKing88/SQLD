@@ -14,10 +14,16 @@ import { dueReviewIds } from "@/lib/srs";
 import { dailyProgress } from "@/lib/streak";
 import { CATEGORY_LABEL, type Category } from "@/lib/types";
 import { sessionForDate } from "@/data/examSchedule";
+import { CONCEPTS } from "@/data/concepts";
+import { deckSummary } from "@/lib/cards";
 
 export default function HomePage() {
-  const { ready, settings, attempts, reviews, mocks } = useStore();
+  const { ready, settings, attempts, reviews, mocks, cardProgress } = useStore();
   const lastMock = mocks.length ? mocks[mocks.length - 1] : null;
+  const cards = useMemo(
+    () => deckSummary(CONCEPTS, cardProgress, "all"),
+    [cardProgress]
+  );
 
   const dday = daysUntil(settings.examDate);
   const gichulCount = useMemo(
@@ -168,6 +174,30 @@ export default function HomePage() {
           시작해보세요! 💪
         </div>
       )}
+
+      {/* 빈출 개념 카드 — 이동 중 반복 암기(문제 풀이보다 가벼움) */}
+      <Link
+        href="/cards"
+        className="flex items-center gap-3 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 p-4 text-white shadow-card active:scale-[0.99]"
+      >
+        <span
+          aria-hidden="true"
+          className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-white/15 text-2xl"
+        >
+          🃏
+        </span>
+        <div className="min-w-0">
+          <p className="text-base font-black">빈출 개념 카드</p>
+          <p className="mt-0.5 text-xs text-brand-100">
+            {cards.total > 0 && cards.known === cards.total
+              ? `전 개념 숙지 완료 · 한 번 더 복습 →`
+              : cards.known + cards.learning > 0
+                ? `숙지 ${cards.known}/${cards.total} · 흔들리는 차 안에서 한 손 반복 →`
+                : `함정·핵심 ${cards.total}개 · 흔들리는 차 안에서 한 손 반복 →`}
+          </p>
+        </div>
+        <span className="ml-auto text-xl">→</span>
+      </Link>
 
       {/* 연습 모드 — 모의고사 / 특훈 / 기출 통합 */}
       <div className="card">
