@@ -5,7 +5,11 @@ import { useMemo } from "react";
 import { questions, useStore } from "@/lib/store";
 import { daysUntil, ddayLabel } from "@/lib/dday";
 import { buildTodaySet } from "@/lib/session";
-import { estimateScore, accuracyByCategoryWith } from "@/lib/scoring";
+import {
+  estimateScore,
+  accuracyByCategoryWith,
+  passProjection,
+} from "@/lib/scoring";
 import { dueReviewIds } from "@/lib/srs";
 import { dailyProgress } from "@/lib/streak";
 import { CATEGORY_LABEL, type Category } from "@/lib/types";
@@ -45,6 +49,7 @@ export default function HomePage() {
   if (!ready) return <Loading />;
 
   const passProjected = score.total >= 60;
+  const proj = passProjection(score);
   const hasData = attempts.length > 0;
 
   return (
@@ -126,7 +131,7 @@ export default function HomePage() {
         </Link>
       </div>
 
-      {/* 예상 점수 — 압축 스트립(데이터 있을 때만, 상세는 통계 탭) */}
+      {/* 예상 점수 + 합격 트래커 — 압축 스트립(데이터 있을 때만, 상세는 통계 탭) */}
       {hasData ? (
         <Link
           href="/stats"
@@ -141,6 +146,11 @@ export default function HomePage() {
                 {score.total}
               </span>
               <span className="text-xs text-slate-400"> / 100 (합격 60)</span>
+            </p>
+            <p className="mt-0.5 text-xs font-semibold text-brand-600">
+              {proj.pass
+                ? "🎯 합격권 — 페이스 유지!"
+                : `합격까지 ${proj.gap}점 · 약 ${proj.questionsNeeded}문제 더`}
             </p>
           </div>
           <span className="flex items-center gap-2 text-xs">

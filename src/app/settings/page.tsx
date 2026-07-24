@@ -58,26 +58,24 @@ export default function SettingsPage() {
     return <div className="py-10 text-center text-slate-400">불러오는 중…</div>;
   }
 
-  function handleSave() {
+  // 모든 설정은 변경 즉시 자동 저장(저장 버튼 불필요 → 데이터 유실 방지).
+  function persist(next: {
+    examDate?: string;
+    dailyGoal?: number;
+    sqlWeight?: number;
+  }) {
     saveSettings({
-      examDate,
-      dailyGoal: Math.min(25, Math.max(5, dailyGoal)),
-      sqlWeight: Math.min(1, Math.max(0, sqlWeight / 100)),
+      examDate: next.examDate ?? examDate,
+      dailyGoal: Math.min(25, Math.max(5, next.dailyGoal ?? dailyGoal)),
+      sqlWeight: Math.min(1, Math.max(0, (next.sqlWeight ?? sqlWeight) / 100)),
     });
     setSaved(true);
-    setTimeout(() => setSaved(false), 1500);
+    setTimeout(() => setSaved(false), 1200);
   }
 
-  // 회차 선택 시 즉시 반영(시험일 저장)
   function pickSession(date: string) {
     setExamDate(date);
-    saveSettings({
-      examDate: date,
-      dailyGoal: Math.min(25, Math.max(5, dailyGoal)),
-      sqlWeight: Math.min(1, Math.max(0, sqlWeight / 100)),
-    });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1500);
+    persist({ examDate: date });
   }
 
   return (
@@ -140,7 +138,10 @@ export default function SettingsPage() {
           <input
             type="date"
             value={examDate}
-            onChange={(e) => setExamDate(e.target.value)}
+            onChange={(e) => {
+              setExamDate(e.target.value);
+              persist({ examDate: e.target.value });
+            }}
             className="w-full rounded-xl border border-slate-200 px-3 py-3 text-slate-800"
           />
         </div>
@@ -155,7 +156,11 @@ export default function SettingsPage() {
             max={25}
             step={1}
             value={dailyGoal}
-            onChange={(e) => setDailyGoal(Number(e.target.value))}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              setDailyGoal(v);
+              persist({ dailyGoal: v });
+            }}
             className="w-full accent-brand"
           />
           <p className="text-xs text-slate-400">권장 15~25 (출퇴근 20~30분)</p>
@@ -171,7 +176,11 @@ export default function SettingsPage() {
             max={90}
             step={5}
             value={sqlWeight}
-            onChange={(e) => setSqlWeight(Number(e.target.value))}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              setSqlWeight(v);
+              persist({ sqlWeight: v });
+            }}
             className="w-full accent-brand"
           />
           <p className="text-xs text-slate-400">
@@ -179,9 +188,9 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        <button className="btn-primary w-full" onClick={handleSave}>
-          {saved ? "저장됨 ✓" : "저장"}
-        </button>
+        <p className="text-center text-xs font-semibold text-brand-600">
+          {saved ? "저장됨 ✓" : "변경하면 즉시 자동 저장됩니다"}
+        </p>
       </div>
 
       <div className="card">

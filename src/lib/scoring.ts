@@ -143,6 +143,22 @@ export function estimateScore(
   };
 }
 
+export interface PassProjection {
+  pass: boolean;
+  gap: number; // 합격(60)까지 남은 점수
+  questionsNeeded: number; // 문항당 2점 → 추가로 맞혀야 할 대략의 문항 수
+}
+
+/** 합격(60점) 기준 목표 프레이밍: 남은 점수와 대략 필요한 추가 정답 수. */
+export function passProjection(score: EstimatedScore): PassProjection {
+  const gap = Math.max(0, 60 - score.total);
+  return {
+    pass: score.total >= 60,
+    gap,
+    questionsNeeded: Math.ceil(gap / 2), // SQLD 문항당 2점
+  };
+}
+
 /** 확신도 대비 정답 통계 (찍었는데 맞음 / 확실한데 틀림 등). 모의고사(mock) 제외. */
 export function confidenceBreakdown(attempts: Attempt[]) {
   const buckets = {
