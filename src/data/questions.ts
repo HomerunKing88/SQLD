@@ -158,7 +158,7 @@ export const QUESTIONS: Question[] = [
     choices: ["1행", "2행", "3행", "4행"],
     answerIndex: 1,
     explanation:
-      "WHERE sal>=250 으로 3행이 남고, GROUP BY dept 로 부서별 그룹, HAVING COUNT(*)>=2 로 인원 2명 이상 부서만 남긴다. 최종 2개 부서(SALES, DEV) → 2행.",
+      "WHERE sal>=250 으로 4행이 남고(Yun 220·Han 240 제거), GROUP BY dept 로 부서별 그룹, HAVING COUNT(*)>=2 로 인원 2명 이상 부서만 남긴다. 최종 2개 부서(SALES, DEV) → 2행.",
     tags: ["GROUP BY", "HAVING", "실행순서"],
     sqlSteps: {
       query:

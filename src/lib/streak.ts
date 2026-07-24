@@ -65,6 +65,36 @@ export function currentStreak(attempts: Attempt[], now: Date = new Date()): numb
   return streak;
 }
 
+export interface DayCount {
+  key: string; // YYYY-MM-DD
+  label: string; // 요일 or 일
+  count: number; // 그날 학습(study) 푼 문항 수
+}
+
+/** 최근 N일 일별 학습량(모의고사 제외). 오늘이 마지막. */
+export function recentDailyStudy(
+  attempts: Attempt[],
+  days: number,
+  now: Date = new Date()
+): DayCount[] {
+  const counts = new Map<string, number>();
+  for (const a of attempts) {
+    if (a.source === "mock") continue;
+    const k = dayKey(new Date(a.answeredAt));
+    counts.set(k, (counts.get(k) ?? 0) + 1);
+  }
+  const out: DayCount[] = [];
+  const base = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const WD = ["일", "월", "화", "수", "목", "금", "토"];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(base);
+    d.setDate(d.getDate() - i);
+    const k = dayKey(d);
+    out.push({ key: k, label: WD[d.getDay()], count: counts.get(k) ?? 0 });
+  }
+  return out;
+}
+
 export interface DailyProgress {
   done: number; // 오늘 푼 고유 문제 수
   goal: number;

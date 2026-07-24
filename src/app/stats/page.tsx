@@ -8,6 +8,7 @@ import {
   confidenceBreakdown,
   estimateScore,
   weakTags,
+  passProjection,
 } from "@/lib/scoring";
 import {
   CATEGORY_LABEL,
@@ -15,11 +16,16 @@ import {
   type Category,
   type Confidence,
 } from "@/lib/types";
+import { recentDailyStudy } from "@/lib/streak";
 
 export default function StatsPage() {
   const { ready, attempts, mocks } = useStore();
 
   const score = useMemo(() => estimateScore(attempts, questions), [attempts]);
+  const proj = useMemo(() => passProjection(score), [score]);
+  const week = useMemo(() => recentDailyStudy(attempts, 7), [attempts]);
+  const weekMax = Math.max(1, ...week.map((d) => d.count));
+  const weekTotal = week.reduce((s, d) => s + d.count, 0);
   const bySub = useMemo(
     () => accuracyBySubject(attempts, questions),
     [attempts]
@@ -72,6 +78,23 @@ export default function StatsPage() {
         <p className="mt-1 text-xs text-slate-500">
           데이터모델링 {score.dataModeling}/20 · SQL {score.sql}/80
         </p>
+        {/* 합격 트래커 */}
+        <div className="mt-3 rounded-xl bg-brand-50 p-3">
+          {proj.pass ? (
+            <p className="text-sm font-bold text-brand-700">
+              🎯 합격권입니다 — 이 페이스를 유지하세요!
+            </p>
+          ) : (
+            <>
+              <p className="text-sm font-bold text-brand-700">
+                합격(60점)까지 {proj.gap}점 · 약 {proj.questionsNeeded}문제 더
+              </p>
+              <p className="mt-0.5 text-xs text-slate-500">
+                SQL은 문항당 2점이라, SQL 정답률을 올리는 게 가장 빠른 길이에요.
+              </p>
+            </>
+          )}
+        </div>
       </div>
 
       {/* 모의고사 점수 추이 */}
@@ -114,6 +137,40 @@ export default function StatsPage() {
           </p>
         </div>
       )}
+
+      {/* 최근 7일 학습량 */}
+      <div className="card">
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-sm font-bold text-slate-500">최근 7일 학습</p>
+          <span className="text-xs text-slate-400">합계 {weekTotal}문항</span>
+        </div>
+        <div className="flex h-24 items-end gap-2">
+          {week.map((d, i) => (
+            <div
+              key={d.key}
+              className="flex h-full flex-1 flex-col items-center justify-end"
+              title={`${d.count}문항`}
+            >
+              {d.count > 0 && (
+                <span className="mb-0.5 text-[10px] font-bold text-slate-500">
+                  {d.count}
+                </span>
+              )}
+              <div
+                className={`w-full rounded-t ${
+                  d.count > 0
+                    ? i === week.length - 1
+                      ? "bg-brand-600"
+                      : "bg-brand-300"
+                    : "bg-slate-100"
+                }`}
+                style={{ height: `${Math.max(3, (d.count / weekMax) * 100)}%` }}
+              />
+              <span className="mt-1 text-[10px] text-slate-400">{d.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* 과목별 */}
       <div className="card">
