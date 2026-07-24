@@ -1,5 +1,5 @@
 // 간단한 오프라인 캐시 서비스워커 (앱 셸 + 런타임 캐시).
-const CACHE = "sqld-v2";
+const CACHE = "sqld-v3";
 const APP_SHELL = [
   "/",
   "/study",
@@ -7,6 +7,7 @@ const APP_SHELL = [
   "/stats",
   "/settings",
   "/exam",
+  "/cards",
   "/manifest.webmanifest",
 ];
 

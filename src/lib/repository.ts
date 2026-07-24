@@ -1,12 +1,20 @@
 // 저장소 추상화 — 기본 구현은 localStorage (오프라인·무로그인).
 // Supabase 동기화가 필요하면 동일 인터페이스로 교체 가능.
-import type { Attempt, MockResult, Review, Settings } from "./types";
+import type {
+  Attempt,
+  CardProgress,
+  CardRating,
+  MockResult,
+  Review,
+  Settings,
+} from "./types";
 
 const KEYS = {
   attempts: "sqld.attempts",
   reviews: "sqld.reviews",
   settings: "sqld.settings",
   mocks: "sqld.mocks",
+  cards: "sqld.cards",
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -71,6 +79,22 @@ export const repository = {
     write(KEYS.mocks, all);
   },
 
+  // --- 개념 카드 진행(점수 통계와 분리) ---
+  getCardProgress(): Record<string, CardProgress> {
+    return read<Record<string, CardProgress>>(KEYS.cards, {});
+  },
+  markCard(conceptId: string, rating: CardRating, now: Date = new Date()): void {
+    const all = repository.getCardProgress();
+    const prev = all[conceptId];
+    all[conceptId] = {
+      conceptId,
+      rating,
+      seenCount: (prev?.seenCount ?? 0) + 1,
+      updatedAt: now.toISOString(),
+    };
+    write(KEYS.cards, all);
+  },
+
   // --- settings ---
   getSettings(): Settings {
     const s = read<Settings>(KEYS.settings, DEFAULT_SETTINGS);
@@ -86,6 +110,7 @@ export const repository = {
     window.localStorage.removeItem(KEYS.attempts);
     window.localStorage.removeItem(KEYS.reviews);
     window.localStorage.removeItem(KEYS.mocks);
+    window.localStorage.removeItem(KEYS.cards);
   },
 
   /** 전체 초기화(설정 포함) */
@@ -103,6 +128,7 @@ export const repository = {
       attempts: repository.getAttempts(),
       reviews: repository.getReviews(),
       mocks: repository.getMocks(),
+      cards: repository.getCardProgress(),
       settings: repository.getSettings(),
     };
   },
@@ -114,6 +140,12 @@ export const repository = {
     write(KEYS.attempts, b.attempts ?? []);
     write(KEYS.reviews, Array.isArray(b.reviews) ? b.reviews : []);
     write(KEYS.mocks, Array.isArray(b.mocks) ? b.mocks : []);
+    write(
+      KEYS.cards,
+      b.cards && typeof b.cards === "object" && !Array.isArray(b.cards)
+        ? b.cards
+        : {}
+    );
     if (b.settings && typeof b.settings === "object") {
       write(KEYS.settings, { ...DEFAULT_SETTINGS, ...b.settings });
     }
@@ -127,6 +159,7 @@ export interface BackupBundle {
   attempts: Attempt[];
   reviews: Review[];
   mocks: MockResult[];
+  cards?: Record<string, CardProgress>;
   settings: Settings;
 }
 
