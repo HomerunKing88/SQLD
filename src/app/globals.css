@@ -17,6 +17,16 @@ body {
   overscroll-behavior-y: none;
 }
 
+/* 키보드 포커스 가시성(접근성) */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid #16a34a;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
 /* 하단 고정 CTA가 시스템 홈바에 가리지 않도록 */
 .safe-bottom {
   padding-bottom: calc(env(safe-area-inset-bottom, 0px));

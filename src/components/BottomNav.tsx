@@ -25,8 +25,8 @@ export default function BottomNav() {
             <Link
               key={t.href}
               href={t.href}
-              className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-xs ${
-                active ? "text-brand-600" : "text-slate-400"
+              className={`flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 py-2 text-xs ${
+                active ? "text-brand-600" : "text-slate-500"
               }`}
             >
               <span className="text-lg leading-none">{t.icon}</span>

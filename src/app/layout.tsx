@@ -19,8 +19,7 @@ export const viewport: Viewport = {
   themeColor: "#16a34a",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // 확대(zoom)를 허용해 접근성(WCAG 1.4.4)을 보장 — 텍스트·SQL 표가 많은 앱.
 };
 
 export default function RootLayout({
