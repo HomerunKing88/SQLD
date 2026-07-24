@@ -77,11 +77,26 @@ try {
     `새로고침 후 중복 기록 없음 (attempts=${attemptsAfterReload})`
   );
 
-  // 8) 홈에서 예상점수/ D-day 렌더 확인
+  // 8) 시험일 설정 후 홈에서 예상점수/ D-day 렌더 확인
+  await page.evaluate(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 20);
+    localStorage.setItem(
+      "sqld.settings",
+      JSON.stringify({ examDate: d.toISOString().slice(0, 10), dailyGoal: 20, sqlWeight: 0.7 })
+    );
+  });
   await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
   await page.waitForSelector("text=예상 점수", { timeout: 5000 });
   const dday = await page.locator("text=/D-\\d+|D-DAY/").first().count();
-  ok(dday > 0, "홈 D-day 렌더");
+  ok(dday > 0, "홈 D-day 렌더(시험일 설정 후)");
+  // 시험일 미설정 시 온보딩 프롬프트 확인
+  await page.evaluate(() => localStorage.removeItem("sqld.settings"));
+  await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
+  ok(
+    (await page.locator("text=시험일을 설정하세요").count()) > 0,
+    "시험일 미설정 시 설정 유도 표시"
+  );
 
   // 9) SQL 단계별 문제(q010) 강제 확인: 통계 페이지 렌더
   await page.goto(`${BASE}/stats`, { waitUntil: "networkidle" });

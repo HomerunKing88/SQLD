@@ -50,7 +50,7 @@ src/
     session.ts      오늘의 문제 세트 구성 (SQL 가중)
     repository.ts   저장소 추상화 (localStorage 구현)
     store.tsx       React 전역 상태
-  data/questions.ts # 시드 60문항 (단일 원본, SQL 44 : 모델링 16)
+  data/questions.ts # 시드 64문항 (단일 원본, SQL 48 : 모델링 16)
 docs/             # 설계 문서(DESIGN.md) / 화면·흐름(FLOW.md)
 supabase/         # (선택) schema.sql, seed.sql
 scripts/          # 아이콘/시드 생성, 스모크 테스트

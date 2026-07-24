@@ -15,7 +15,7 @@ import type {
   Review,
   Settings,
 } from "./types";
-import { repository } from "./repository";
+import { repository, DEFAULT_SETTINGS } from "./repository";
 import { nextReviewOnAnswer, scheduleOnWrong } from "./srs";
 import { scoreMock } from "./mock";
 import { QUESTIONS } from "@/data/questions";
@@ -40,6 +40,10 @@ interface StoreValue {
     answers: Record<string, { selectedIndex: number; isCorrect: boolean }>;
     durationSec: number;
   }) => MockResult;
+  /** 전체 데이터를 JSON 문자열로 내보내기 */
+  exportBundle: () => string;
+  /** JSON 백업 복원(성공 여부 반환) */
+  importBundle: (text: string) => boolean;
   resetAll: () => void;
 }
 
@@ -52,25 +56,17 @@ function genId(): string {
   return `a_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
 }
 
-/** 최초 진입 시 시험일이 없으면 30일 뒤로 기본 설정 */
-function ensureExamDate(s: Settings): Settings {
-  if (s.examDate) return s;
-  const d = new Date();
-  d.setDate(d.getDate() + 30);
-  return { ...s, examDate: d.toISOString().slice(0, 10) };
-}
-
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
-  const [settings, setSettings] = useState<Settings>(repository.getSettings());
+  // 초기값은 상수(SSR/hydration 일관). 실제 값은 아래 effect에서 로드.
+  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [mocks, setMocks] = useState<MockResult[]>([]);
 
   useEffect(() => {
-    const s = ensureExamDate(repository.getSettings());
-    repository.saveSettings(s);
-    setSettings(s);
+    // 시험일은 자동으로 채우지 않는다(가짜 D-day 방지). 사용자가 설정에서 지정.
+    setSettings(repository.getSettings());
     setAttempts(repository.getAttempts());
     setReviews(repository.getReviews());
     setMocks(repository.getMocks());
@@ -162,11 +158,29 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
+  const exportBundle = useCallback(
+    () => JSON.stringify(repository.exportBundle(), null, 2),
+    []
+  );
+
+  const importBundle = useCallback((text: string) => {
+    try {
+      const ok = repository.importBundle(JSON.parse(text));
+      if (ok) {
+        setAttempts(repository.getAttempts());
+        setReviews(repository.getReviews());
+        setMocks(repository.getMocks());
+        setSettings(repository.getSettings());
+      }
+      return ok;
+    } catch {
+      return false;
+    }
+  }, []);
+
   const resetAll = useCallback(() => {
-    repository.reset();
-    const s = ensureExamDate(repository.getSettings());
-    repository.saveSettings(s);
-    setSettings(s);
+    // 학습 기록만 초기화. 시험일·목표 등 설정은 보존한다.
+    repository.resetProgress();
     setAttempts([]);
     setReviews([]);
     setMocks([]);
@@ -182,6 +196,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       saveSettings,
       submitAnswer,
       finishMock,
+      exportBundle,
+      importBundle,
       resetAll,
     }),
     [
@@ -193,6 +209,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       saveSettings,
       submitAnswer,
       finishMock,
+      exportBundle,
+      importBundle,
       resetAll,
     ]
   );

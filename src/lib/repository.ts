@@ -28,7 +28,12 @@ function read<T>(key: string, fallback: T): T {
 
 function write<T>(key: string, value: T): void {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(key, JSON.stringify(value));
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // 저장 실패(쿼터 초과 / iOS 프라이빗 모드)에도 앱 흐름이 끊기지 않도록 무시.
+    // 데이터는 메모리 상태로 유지되며, 백업(내보내기)으로 대비한다.
+  }
 }
 
 export const repository = {
@@ -75,13 +80,54 @@ export const repository = {
     write(KEYS.settings, s);
   },
 
-  reset(): void {
+  /** 학습 기록만 초기화(설정·시험일은 유지) */
+  resetProgress(): void {
     if (typeof window === "undefined") return;
     window.localStorage.removeItem(KEYS.attempts);
     window.localStorage.removeItem(KEYS.reviews);
-    window.localStorage.removeItem(KEYS.settings);
     window.localStorage.removeItem(KEYS.mocks);
   },
+
+  /** 전체 초기화(설정 포함) */
+  reset(): void {
+    if (typeof window === "undefined") return;
+    repository.resetProgress();
+    window.localStorage.removeItem(KEYS.settings);
+  },
+
+  // --- 백업(내보내기/가져오기) ---
+  exportBundle(): BackupBundle {
+    return {
+      app: "sqld-30day",
+      version: 1,
+      attempts: repository.getAttempts(),
+      reviews: repository.getReviews(),
+      mocks: repository.getMocks(),
+      settings: repository.getSettings(),
+    };
+  },
+  /** 백업 복원. 유효하지 않으면 false. */
+  importBundle(data: unknown): boolean {
+    if (!data || typeof data !== "object") return false;
+    const b = data as Partial<BackupBundle>;
+    if (b.app !== "sqld-30day" || !Array.isArray(b.attempts)) return false;
+    write(KEYS.attempts, b.attempts ?? []);
+    write(KEYS.reviews, Array.isArray(b.reviews) ? b.reviews : []);
+    write(KEYS.mocks, Array.isArray(b.mocks) ? b.mocks : []);
+    if (b.settings && typeof b.settings === "object") {
+      write(KEYS.settings, { ...DEFAULT_SETTINGS, ...b.settings });
+    }
+    return true;
+  },
 };
+
+export interface BackupBundle {
+  app: "sqld-30day";
+  version: number;
+  attempts: Attempt[];
+  reviews: Review[];
+  mocks: MockResult[];
+  settings: Settings;
+}
 
 export type Repository = typeof repository;

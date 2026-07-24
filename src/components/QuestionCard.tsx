@@ -136,7 +136,7 @@ export default function QuestionCard({
                 <button
                   key={c}
                   onClick={() => setConfidence(c)}
-                  className={`rounded-xl border py-2.5 text-sm font-semibold transition ${
+                  className={`min-h-[48px] rounded-xl border py-2.5 text-sm font-semibold transition ${
                     confidence === c
                       ? CONF_STYLE[c]
                       : "border-slate-200 bg-white text-slate-500"

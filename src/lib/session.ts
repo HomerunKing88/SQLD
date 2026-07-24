@@ -49,7 +49,8 @@ interface BuildInput {
 export interface TodaySet {
   questionIds: string[];
   reviewCount: number;
-  newCount: number;
+  newCount: number; // 아직 안 푼 '진짜 신규' 문항 수
+  reservedCount: number; // 은행 소진으로 재출제된(복습성) 문항 수
 }
 
 /** 동일 유형 3개 연속 방지 배치 */
@@ -84,12 +85,17 @@ export function buildTodaySet(input: BuildInput): TodaySet {
   const chosen = new Set<string>(due.slice(0, goal));
 
   // 2) 신규(아직 안 푼) 문제로 채우기 — SQL 가중 + 취약 유형 우선
+  //    '푼 문제' 판정은 학습(study) 기준. 모의고사로 스친 문항까지 신규에서 빼면
+  //    신규 문제가 급격히 고갈되므로 mock은 제외한다.
   const weakness = categoryWeakness(attempts, byId);
-  const attemptedIds = new Set(attempts.map((a) => a.questionId));
+  const attemptedIds = new Set(
+    attempts.filter((a) => a.source !== "mock").map((a) => a.questionId)
+  );
   const fresh = byWeakness(
     questions.filter((q) => !attemptedIds.has(q.id) && !chosen.has(q.id)),
     weakness
   );
+  const freshIdSet = new Set(fresh.map((q) => q.id));
   const freshSql = fresh.filter((q) => q.subject === "sql");
   const freshDm = fresh.filter((q) => q.subject === "data_modeling");
 
@@ -138,10 +144,13 @@ export function buildTodaySet(input: BuildInput): TodaySet {
   const rest = [...chosen].filter((id) => !reviewIds.includes(id));
   const ordered = [...reviewIds, ...spread(rest, byId)];
 
+  // 신규(아직 안 푼) vs 재출제(은행 소진) 구분 — 재출제를 '신규'로 오표기하지 않는다.
+  const newCount = rest.filter((id) => freshIdSet.has(id)).length;
   return {
     questionIds: ordered,
     reviewCount: reviewIds.length,
-    newCount: ordered.length - reviewIds.length,
+    newCount,
+    reservedCount: rest.length - newCount,
   };
 }
 

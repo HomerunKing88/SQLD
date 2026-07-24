@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { questions, useStore } from "@/lib/store";
 import {
   buildMockExam,
+  DEFAULT_MOCK,
   formatClock,
   formatDuration,
   mockTimeLimitSec,
@@ -14,6 +15,7 @@ import {
   SUBJECT_LABEL,
   type MockResult,
 } from "@/lib/types";
+import ConfirmModal from "@/components/ConfirmModal";
 
 type Phase = "intro" | "exam" | "result";
 
@@ -29,7 +31,7 @@ interface ExamState {
 function loadExam(): ExamState | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = window.sessionStorage.getItem(EXAM_KEY);
+    const raw = window.localStorage.getItem(EXAM_KEY);
     return raw ? (JSON.parse(raw) as ExamState) : null;
   } catch {
     return null;
@@ -37,11 +39,15 @@ function loadExam(): ExamState | null {
 }
 function saveExam(s: ExamState) {
   if (typeof window === "undefined") return;
-  window.sessionStorage.setItem(EXAM_KEY, JSON.stringify(s));
+  try {
+    window.localStorage.setItem(EXAM_KEY, JSON.stringify(s));
+  } catch {
+    /* 저장 실패 무시 */
+  }
 }
 function clearExam() {
   if (typeof window === "undefined") return;
-  window.sessionStorage.removeItem(EXAM_KEY);
+  window.localStorage.removeItem(EXAM_KEY);
 }
 
 export default function ExamPage() {
@@ -52,6 +58,8 @@ export default function ExamPage() {
   const [exam, setExam] = useState<ExamState | null>(null);
   const [result, setResult] = useState<MockResult | null>(null);
   const [nowMs, setNowMs] = useState<number>(() => Date.now());
+  const [showNav, setShowNav] = useState(false);
+  const [confirmSubmit, setConfirmSubmit] = useState(false);
   const inited = useRef(false);
   const submittedRef = useRef(false);
 
@@ -64,10 +72,16 @@ export default function ExamPage() {
       saved &&
       Array.isArray(saved.ids) &&
       saved.ids.length > 0 &&
+      typeof saved.cursor === "number" &&
+      saved.cursor >= 0 &&
+      saved.cursor < saved.ids.length &&
+      saved.selected != null &&
       saved.ids.every((id) => qMap.has(id))
     ) {
       setExam(saved);
       setPhase("exam");
+    } else {
+      clearExam();
     }
   }, [ready, qMap]);
 
@@ -120,11 +134,13 @@ export default function ExamPage() {
 
   // ── 시작 화면 ──
   if (phase === "intro" || !exam) {
-    const previewIds = buildMockExam(questions);
-    const count = previewIds.length;
-    const dm = previewIds.filter(
-      (id) => qMap.get(id)?.subject === "data_modeling"
+    // 구성은 결정적으로 계산(렌더에서 Math.random 사용 금지). 셔플은 시작 시에만.
+    const dmAvail = questions.filter(
+      (q) => q.subject === "data_modeling"
     ).length;
+    const sqlAvail = questions.filter((q) => q.subject === "sql").length;
+    const dm = Math.min(DEFAULT_MOCK.modeling, dmAvail);
+    const count = dm + Math.min(DEFAULT_MOCK.sql, sqlAvail);
     const start = () => {
       const ids = buildMockExam(questions);
       const s: ExamState = { ids, selected: {}, cursor: 0, startedAt: Date.now() };
@@ -236,8 +252,85 @@ export default function ExamPage() {
         </div>
       </div>
 
-      {/* 하단 고정: 네비 + 제출 */}
-      <div className="safe-bottom sticky bottom-16 -mx-4 mt-4 space-y-2 border-t border-slate-200/70 bg-canvas/95 px-4 py-3 backdrop-blur">
+      {/* 문항 네비게이터(바텀시트) */}
+      {showNav && (
+        <div
+          className="fixed inset-0 z-40 flex items-end bg-black/40"
+          onClick={() => setShowNav(false)}
+        >
+          <div
+            className="safe-bottom mx-auto max-h-[70vh] w-full max-w-app overflow-y-auto rounded-t-2xl bg-white p-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-sm font-bold text-slate-700">
+                문항 이동 · 응답 {answeredCount}/{total}
+              </p>
+              <button
+                className="text-sm font-semibold text-slate-400"
+                onClick={() => setShowNav(false)}
+              >
+                닫기
+              </button>
+            </div>
+            <div className="grid grid-cols-6 gap-2">
+              {exam.ids.map((id, i) => {
+                const done = exam.selected[id] !== undefined;
+                const cur = i === exam.cursor;
+                return (
+                  <button
+                    key={id}
+                    onClick={() => {
+                      update({ cursor: i });
+                      setShowNav(false);
+                    }}
+                    className={`flex h-11 items-center justify-center rounded-lg border text-sm font-semibold ${
+                      cur
+                        ? "border-brand-500 bg-brand-500 text-white"
+                        : done
+                          ? "border-brand-200 bg-brand-50 text-brand-700"
+                          : "border-slate-200 bg-white text-slate-400"
+                    }`}
+                  >
+                    {i + 1}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 제출 확인 모달 */}
+      <ConfirmModal
+        open={confirmSubmit}
+        title="지금 제출할까요?"
+        message={`응답 ${answeredCount}/${total} · 미응답은 오답 처리됩니다.`}
+        confirmLabel="제출하기"
+        cancelLabel="계속 풀기"
+        onConfirm={() => {
+          setConfirmSubmit(false);
+          submit();
+        }}
+        onCancel={() => setConfirmSubmit(false)}
+      />
+
+      {/* 하단 고정: 문항/제출 + 이전/다음 */}
+      <div className="safe-bottom sticky bottom-0 -mx-4 mt-4 space-y-2 border-t border-slate-200/70 bg-canvas/95 px-4 py-3 backdrop-blur">
+        <div className="flex items-center justify-between text-sm">
+          <button
+            className="font-semibold text-slate-500"
+            onClick={() => setShowNav(true)}
+          >
+            ▦ 문항 {answeredCount}/{total}
+          </button>
+          <button
+            className="font-bold text-brand-600"
+            onClick={() => setConfirmSubmit(true)}
+          >
+            제출
+          </button>
+        </div>
         <div className="grid grid-cols-2 gap-2">
           <button
             className="btn-ghost"
@@ -247,17 +340,7 @@ export default function ExamPage() {
             이전
           </button>
           {isLast ? (
-            <button
-              className="btn-accent"
-              onClick={() => {
-                if (
-                  confirm(
-                    `제출하시겠어요? (응답 ${answeredCount}/${total})\n미응답은 오답 처리됩니다.`
-                  )
-                )
-                  submit();
-              }}
-            >
+            <button className="btn-accent" onClick={() => setConfirmSubmit(true)}>
               제출하기
             </button>
           ) : (

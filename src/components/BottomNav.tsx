@@ -13,6 +13,8 @@ const TABS = [
 
 export default function BottomNav() {
   const pathname = usePathname();
+  // 모의고사 진행 화면에서는 하단 네비를 숨겨 타이머 세션의 오조작 이탈을 막는다.
+  if (pathname === "/exam") return null;
   return (
     <nav className="safe-bottom fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white/95 backdrop-blur">
       <div className="mx-auto flex max-w-app items-stretch justify-around">
@@ -23,8 +25,8 @@ export default function BottomNav() {
             <Link
               key={t.href}
               href={t.href}
-              className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-xs ${
-                active ? "text-brand-600" : "text-slate-400"
+              className={`flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 py-2 text-xs ${
+                active ? "text-brand-600" : "text-slate-500"
               }`}
             >
               <span className="text-lg leading-none">{t.icon}</span>
