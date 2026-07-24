@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { questions, useStore } from "@/lib/store";
-import { buildTodaySet, buildWeakDrillSet } from "@/lib/session";
+import { buildTodaySet, buildWeakDrillSet, buildTagSet } from "@/lib/session";
 import QuestionCard from "@/components/QuestionCard";
 import { CATEGORY_LABEL, type Confidence } from "@/lib/types";
 import { estimateScore } from "@/lib/scoring";
@@ -14,7 +14,8 @@ interface Result {
   confidence: Confidence;
 }
 
-type Mode = "today" | "drill";
+type Mode = "today" | "drill" | "gichul";
+const GICHUL_TAG = "기출유형";
 
 // 진행 중 세션을 localStorage에 보관 → 앱을 닫아도(통근 사이) 이어풀기
 const SESSION_KEY = "sqld.session";
@@ -30,12 +31,11 @@ interface SavedSession {
   >;
 }
 
-/** URL에 명시된 모드(?mode=drill)만 반환. 없으면 null(=진행 중 세션 우선). */
+/** URL에 명시된 모드(?mode=drill|gichul)만 반환. 없으면 null(=진행 중 세션 우선). */
 function urlMode(): Mode | null {
   if (typeof window === "undefined") return null;
-  return new URLSearchParams(window.location.search).get("mode") === "drill"
-    ? "drill"
-    : null;
+  const m = new URLSearchParams(window.location.search).get("mode");
+  return m === "drill" || m === "gichul" ? m : null;
 }
 
 function isValidSaved(saved: SavedSession | null, qMap: Map<string, unknown>): saved is SavedSession {
@@ -94,14 +94,18 @@ export default function StudyPage() {
     const saved = loadSession();
     const savedValid = isValidSaved(saved, qMap);
 
-    // 명시적 특훈 진입: 저장본이 특훈이면 이어서, 아니면 새 특훈 구성
-    if (explicit === "drill") {
-      if (savedValid && saved!.mode === "drill") {
+    // 명시적 모드 진입(특훈/기출): 저장본이 같은 모드면 이어서, 아니면 새로 구성
+    if (explicit === "drill" || explicit === "gichul") {
+      if (savedValid && saved!.mode === explicit) {
         setSession(saved);
         return;
       }
-      const ids = buildWeakDrillSet({ questions, attempts, settings }).questionIds;
-      const fresh: SavedSession = { mode: "drill", ids, cursor: 0, answers: {} };
+      const ids =
+        explicit === "drill"
+          ? buildWeakDrillSet({ questions, attempts, settings }).questionIds
+          : buildTagSet({ questions, attempts, settings }, GICHUL_TAG)
+              .questionIds;
+      const fresh: SavedSession = { mode: explicit, ids, cursor: 0, answers: {} };
       setSession(fresh);
       if (ids.length > 0) saveSession(fresh);
       return;
@@ -182,6 +186,14 @@ export default function StudyPage() {
           <span>🎯 취약 유형 특훈</span>
           <span className="chip bg-white text-slate-600">
             {CATEGORY_LABEL[focusCat]} 집중
+          </span>
+        </div>
+      )}
+      {session.mode === "gichul" && (
+        <div className="mb-2 flex items-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-3 py-2 text-xs font-semibold text-brand-700">
+          <span>📜 기출 유형 집중</span>
+          <span className="chip bg-white text-slate-600">
+            자주 나오는 개념·함정
           </span>
         </div>
       )}

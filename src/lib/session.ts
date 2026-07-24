@@ -190,3 +190,34 @@ export function buildWeakDrillSet(input: {
     : null;
   return { questionIds, focusCategory };
 }
+
+/**
+ * 특정 태그(예: '기출유형') 문항만 모아 세트 구성. 취약·미완료 우선.
+ * count = 해당 태그 전체 문항 수(홈 표시용).
+ */
+export function buildTagSet(
+  input: { questions: Question[]; attempts: Attempt[]; settings: Settings },
+  tag: string
+): { questionIds: string[]; count: number } {
+  const { questions, attempts, settings } = input;
+  const goal = Math.max(1, settings.dailyGoal);
+  const byId = new Map(questions.map((q) => [q.id, q]));
+  const weakness = categoryWeakness(attempts, byId);
+  const latest = latestAttempts(attempts.filter((a) => a.source !== "mock"));
+
+  const pool = questions.filter((q) => q.tags.includes(tag));
+  const prio = (q: Question): number => {
+    const w = weakness.get(q.category) ?? 0.5;
+    const a = latest.get(q.id);
+    const seenAdj = a ? (a.isCorrect ? 0.3 : -0.3) : -0.1; // 미풀이 살짝 우선, 오답 더 우선
+    return w + seenAdj;
+  };
+  const ordered = [...pool].sort((a, b) => {
+    const d = prio(a) - prio(b);
+    return d !== 0 ? d : a.id.localeCompare(b.id);
+  });
+  return {
+    questionIds: ordered.slice(0, goal).map((q) => q.id),
+    count: pool.length,
+  };
+}
