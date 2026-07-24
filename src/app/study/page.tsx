@@ -16,9 +16,15 @@ interface Result {
 
 type Mode = "today" | "drill" | "gichul";
 const GICHUL_TAG = "기출유형";
+const MODE_LABEL: Record<Mode, string> = {
+  today: "오늘의 학습",
+  drill: "취약 유형 특훈",
+  gichul: "기출 유형",
+};
 
-// 진행 중 세션을 localStorage에 보관 → 앱을 닫아도(통근 사이) 이어풀기
-const SESSION_KEY = "sqld.session";
+// 진행 중 세션을 모드별로 localStorage에 보관 → 모드 전환이 서로의 진행을 지우지 않음
+const SESSION_PREFIX = "sqld.session.";
+const keyFor = (m: Mode) => SESSION_PREFIX + m;
 
 interface SavedSession {
   mode: Mode;
@@ -31,7 +37,7 @@ interface SavedSession {
   >;
 }
 
-/** URL에 명시된 모드(?mode=drill|gichul)만 반환. 없으면 null(=진행 중 세션 우선). */
+/** URL에 명시된 모드(?mode=drill|gichul)만 반환. 없으면 null(=오늘의 학습). */
 function urlMode(): Mode | null {
   if (typeof window === "undefined") return null;
   const m = new URLSearchParams(window.location.search).get("mode");
@@ -51,10 +57,10 @@ function isValidSaved(saved: SavedSession | null, qMap: Map<string, unknown>): s
   );
 }
 
-function loadSession(): SavedSession | null {
+function loadSession(mode: Mode): SavedSession | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = window.localStorage.getItem(SESSION_KEY);
+    const raw = window.localStorage.getItem(keyFor(mode));
     return raw ? (JSON.parse(raw) as SavedSession) : null;
   } catch {
     return null;
@@ -63,14 +69,36 @@ function loadSession(): SavedSession | null {
 function saveSession(s: SavedSession): void {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(SESSION_KEY, JSON.stringify(s));
+    window.localStorage.setItem(keyFor(s.mode), JSON.stringify(s));
   } catch {
     /* 저장 실패 무시 */
   }
 }
-function clearSession(): void {
+function clearSession(mode: Mode): void {
   if (typeof window === "undefined") return;
-  window.localStorage.removeItem(SESSION_KEY);
+  window.localStorage.removeItem(keyFor(mode));
+}
+
+interface BuildCtx {
+  attempts: import("@/lib/types").Attempt[];
+  reviews: import("@/lib/types").Review[];
+  settings: import("@/lib/types").Settings;
+}
+function buildSetFor(mode: Mode, ctx: BuildCtx): string[] {
+  if (mode === "drill")
+    return buildWeakDrillSet({ questions, attempts: ctx.attempts, settings: ctx.settings })
+      .questionIds;
+  if (mode === "gichul")
+    return buildTagSet(
+      { questions, attempts: ctx.attempts, settings: ctx.settings },
+      GICHUL_TAG
+    ).questionIds;
+  return buildTodaySet({
+    questions,
+    attempts: ctx.attempts,
+    reviews: ctx.reviews,
+    settings: ctx.settings,
+  }).questionIds;
 }
 
 export default function StudyPage() {
@@ -90,35 +118,15 @@ export default function StudyPage() {
         .filter((r) => new Date(r.dueAt).getTime() <= Date.now())
         .map((r) => r.questionId)
     );
-    const explicit = urlMode(); // 'drill' 또는 null
-    const saved = loadSession();
-    const savedValid = isValidSaved(saved, qMap);
-
-    // 명시적 모드 진입(특훈/기출): 저장본이 같은 모드면 이어서, 아니면 새로 구성
-    if (explicit === "drill" || explicit === "gichul") {
-      if (savedValid && saved!.mode === explicit) {
-        setSession(saved);
-        return;
-      }
-      const ids =
-        explicit === "drill"
-          ? buildWeakDrillSet({ questions, attempts, settings }).questionIds
-          : buildTagSet({ questions, attempts, settings }, GICHUL_TAG)
-              .questionIds;
-      const fresh: SavedSession = { mode: explicit, ids, cursor: 0, answers: {} };
-      setSession(fresh);
-      if (ids.length > 0) saveSession(fresh);
-      return;
-    }
-
-    // 학습 탭(모드 미지정): 진행 중 세션이 있으면 모드 불문 이어풀기
-    if (savedValid) {
+    // 모드는 URL로 결정(없으면 오늘의 학습). 모드별 슬롯에서 복원 → 트랩 방지.
+    const mode: Mode = urlMode() ?? "today";
+    const saved = loadSession(mode);
+    if (isValidSaved(saved, qMap) && saved.mode === mode) {
       setSession(saved);
       return;
     }
-    const ids = buildTodaySet({ questions, attempts, reviews, settings })
-      .questionIds;
-    const fresh: SavedSession = { mode: "today", ids, cursor: 0, answers: {} };
+    const ids = buildSetFor(mode, { attempts, reviews, settings });
+    const fresh: SavedSession = { mode, ids, cursor: 0, answers: {} };
     setSession(fresh);
     if (ids.length > 0) saveSession(fresh);
   }, [ready, attempts, reviews, settings, qMap]);
@@ -127,7 +135,7 @@ export default function StudyPage() {
   useEffect(() => {
     if (!session) return;
     if (session.ids.length === 0) return;
-    if (session.cursor >= session.ids.length) clearSession();
+    if (session.cursor >= session.ids.length) clearSession(session.mode);
     else saveSession(session);
   }, [session]);
 
@@ -178,25 +186,43 @@ export default function StudyPage() {
 
   const existing = answers[q.id];
   const focusCat = qMap.get(ids[0])?.category;
+  const modeIcon =
+    session.mode === "drill" ? "🎯" : session.mode === "gichul" ? "📜" : "✏️";
+
+  const restart = () => {
+    if (!window.confirm(`${MODE_LABEL[session.mode]}을(를) 새로 시작할까요?`))
+      return;
+    clearSession(session.mode);
+    const newIds = buildSetFor(session.mode, { attempts, reviews, settings });
+    const fresh: SavedSession = {
+      mode: session.mode,
+      ids: newIds,
+      cursor: 0,
+      answers: {},
+    };
+    setSession(fresh);
+    if (newIds.length > 0) saveSession(fresh);
+  };
 
   return (
     <>
-      {session.mode === "drill" && focusCat && (
-        <div className="mb-2 flex items-center gap-2 rounded-xl border border-accent-200 bg-accent-50 px-3 py-2 text-xs font-semibold text-accent-ink">
-          <span>🎯 취약 유형 특훈</span>
-          <span className="chip bg-white text-slate-600">
-            {CATEGORY_LABEL[focusCat]} 집중
-          </span>
-        </div>
-      )}
-      {session.mode === "gichul" && (
-        <div className="mb-2 flex items-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-3 py-2 text-xs font-semibold text-brand-700">
-          <span>📜 기출 유형 집중</span>
-          <span className="chip bg-white text-slate-600">
-            자주 나오는 개념·함정
-          </span>
-        </div>
-      )}
+      {/* 모드 헤더 — 어떤 모드인지 항상 표시 + 새로 시작 */}
+      <div className="mb-2 flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
+        <span className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+          <span>{modeIcon}</span> {MODE_LABEL[session.mode]}
+          {session.mode === "drill" && focusCat && (
+            <span className="chip bg-accent-50 text-accent-ink">
+              {CATEGORY_LABEL[focusCat]} 집중
+            </span>
+          )}
+        </span>
+        <button
+          className="text-xs font-semibold text-slate-400"
+          onClick={restart}
+        >
+          새로 시작
+        </button>
+      </div>
       <QuestionCard
         key={q.id}
         question={q}

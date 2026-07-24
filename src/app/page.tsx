@@ -45,6 +45,7 @@ export default function HomePage() {
   if (!ready) return <Loading />;
 
   const passProjected = score.total >= 60;
+  const hasData = attempts.length > 0;
 
   return (
     <div className="space-y-3">
@@ -125,94 +126,80 @@ export default function HomePage() {
         </Link>
       </div>
 
-      {/* 예상 점수 */}
+      {/* 예상 점수 — 압축 스트립(데이터 있을 때만, 상세는 통계 탭) */}
+      {hasData ? (
+        <Link
+          href="/stats"
+          className="flex items-center justify-between rounded-2xl border border-slate-200/70 bg-white p-4 shadow-card"
+        >
+          <div>
+            <p className="text-xs font-bold text-slate-500">예상 점수</p>
+            <p className="mt-0.5">
+              <span
+                className={`text-2xl font-black ${passProjected ? "text-brand-700" : "text-slate-800"}`}
+              >
+                {score.total}
+              </span>
+              <span className="text-xs text-slate-400"> / 100 (합격 60)</span>
+            </p>
+          </div>
+          <span className="flex items-center gap-2 text-xs">
+            {!score.enoughSample && (
+              <span className="chip bg-accent-100 text-accent-ink">
+                더 풀면 정확해져요
+              </span>
+            )}
+            <span className="font-semibold text-brand-500">통계 →</span>
+          </span>
+        </Link>
+      ) : (
+        <div className="card text-center text-sm text-slate-500">
+          문제를 풀면 예상 점수를 계산해 드려요. 위 <b>오늘의 학습</b>부터
+          시작해보세요! 💪
+        </div>
+      )}
+
+      {/* 연습 모드 — 모의고사 / 특훈 / 기출 통합 */}
       <div className="card">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-bold text-slate-500">예상 점수</p>
-          {!score.enoughSample && (
-            <span className="chip bg-accent-100 text-accent-ink">표본 부족</span>
-          )}
+        <p className="mb-2 text-sm font-bold text-slate-500">연습 모드</p>
+        <div className="space-y-2">
+          <ModeRow
+            href="/exam"
+            icon="📝"
+            title="모의고사"
+            sub={
+              lastMock
+                ? `최근 ${lastMock.score}점 · ${lastMock.passed ? "합격권" : "재도전"}`
+                : "실제 배점으로 실력 점검"
+            }
+            right={
+              lastMock ? (
+                <span
+                  className={`text-lg font-black ${lastMock.passed ? "text-brand-600" : "text-slate-400"}`}
+                >
+                  {lastMock.score}
+                </span>
+              ) : undefined
+            }
+          />
+          <ModeRow
+            href="/study?mode=drill"
+            icon="🎯"
+            title="취약 유형 특훈"
+            sub={
+              weakest
+                ? `${CATEGORY_LABEL[weakest.cat]} ${Math.round(weakest.rate * 100)}% — 집중 공략`
+                : "정답률 낮은 유형을 몰아서 연습"
+            }
+          />
+          <ModeRow
+            href="/study?mode=gichul"
+            icon="📜"
+            title="기출 유형"
+            sub={`빈출 개념·함정 ${gichulCount}문항`}
+          />
         </div>
-        <div className="mt-1 flex items-end gap-2">
-          <span className="text-4xl font-black text-brand-700">
-            {score.total}
-          </span>
-          <span className="mb-1 text-sm text-slate-400">/ 100 (합격 60)</span>
-        </div>
-        <div className="mt-3 space-y-2 text-xs">
-          <ScoreRow label="데이터 모델링" value={score.dataModeling} max={20} />
-          <ScoreRow label="SQL 기본 및 활용" value={score.sql} max={80} />
-        </div>
-        <p className="mt-3 text-xs text-slate-500">
-          {passProjected
-            ? "🎯 현재 페이스면 합격권입니다. 유지!"
-            : `합격까지 ${60 - score.total}점 더 필요해요. SQL 정답률을 끌어올리세요.`}
-        </p>
       </div>
-
-      {/* 모의고사 진입 + 최근 점수 */}
-      <Link
-        href="/exam"
-        className="flex items-center gap-3 rounded-2xl border border-slate-200/70 bg-white p-4 shadow-card"
-      >
-        <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-brand-50 text-lg">
-          📝
-        </span>
-        <div className="min-w-0">
-          <p className="text-sm font-bold text-slate-700">모의고사</p>
-          <p className="truncate text-xs text-slate-400">
-            {lastMock
-              ? `최근 ${lastMock.score}점 · ${lastMock.passed ? "합격권" : "재도전"}`
-              : "실제 배점으로 실력 점검"}
-          </p>
-        </div>
-        {lastMock && (
-          <span
-            className={`ml-auto text-lg font-black ${
-              lastMock.passed ? "text-brand-600" : "text-slate-400"
-            }`}
-          >
-            {lastMock.score}
-          </span>
-        )}
-        {!lastMock && <span className="ml-auto text-brand-500">→</span>}
-      </Link>
-
-      {/* 취약 유형 특훈 진입 */}
-      <Link
-        href="/study?mode=drill"
-        className="flex items-center gap-3 rounded-2xl border border-slate-200/70 bg-white p-4 shadow-card"
-      >
-        <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-brand-50 text-lg">
-          🎯
-        </span>
-        <div className="min-w-0">
-          <p className="text-sm font-bold text-slate-700">취약 유형 특훈</p>
-          <p className="truncate text-xs text-slate-400">
-            {weakest
-              ? `${CATEGORY_LABEL[weakest.cat]} ${Math.round(weakest.rate * 100)}% — 집중 공략`
-              : "정답률 낮은 유형을 몰아서 연습"}
-          </p>
-        </div>
-        <span className="ml-auto text-brand-500">→</span>
-      </Link>
-
-      {/* 기출 유형 진입 */}
-      <Link
-        href="/study?mode=gichul"
-        className="flex items-center gap-3 rounded-2xl border border-slate-200/70 bg-white p-4 shadow-card"
-      >
-        <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-brand-50 text-lg">
-          📜
-        </span>
-        <div className="min-w-0">
-          <p className="text-sm font-bold text-slate-700">기출 유형</p>
-          <p className="truncate text-xs text-slate-400">
-            자주 나오는 개념·함정 {gichulCount}문항으로 집중 대비
-          </p>
-        </div>
-        <span className="ml-auto text-brand-500">→</span>
-      </Link>
 
       {/* 복습 대기 — 흰 카드 + 노란 포인트 */}
       {dueCount > 0 && (
@@ -233,30 +220,38 @@ export default function HomePage() {
   );
 }
 
-function ScoreRow({
-  label,
-  value,
-  max,
+function ModeRow({
+  href,
+  icon,
+  title,
+  sub,
+  right,
 }: {
-  label: string;
-  value: number;
-  max: number;
+  href: string;
+  icon: string;
+  title: string;
+  sub: string;
+  right?: React.ReactNode;
 }) {
   return (
-    <div>
-      <div className="mb-1 flex justify-between">
-        <span className="text-slate-500">{label}</span>
-        <span className="font-semibold text-slate-700">
-          {value} / {max}
-        </span>
+    <Link
+      href={href}
+      className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 active:bg-slate-50"
+    >
+      <span
+        aria-hidden="true"
+        className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-brand-50 text-lg"
+      >
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <p className="text-sm font-bold text-slate-700">{title}</p>
+        <p className="truncate text-xs text-slate-400">{sub}</p>
       </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-        <div
-          className="h-full bg-brand-500"
-          style={{ width: `${(value / max) * 100}%` }}
-        />
-      </div>
-    </div>
+      <span className="ml-auto">
+        {right ?? <span className="text-brand-500">→</span>}
+      </span>
+    </Link>
   );
 }
 

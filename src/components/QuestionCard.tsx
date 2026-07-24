@@ -52,12 +52,13 @@ export default function QuestionCard({
   const isCorrect = submitted && selected === question.answerIndex;
 
   function handleSubmit() {
-    if (selected === null || confidence === null) return;
+    if (selected === null) return;
+    // 확신도는 선택사항 — 미선택 시 '애매함'으로 처리(탭 수 절감).
     setSubmitted(true);
     onAnswered({
       selectedIndex: selected,
       isCorrect: selected === question.answerIndex,
-      confidence,
+      confidence: confidence ?? "unsure",
     });
   }
 
@@ -127,10 +128,12 @@ export default function QuestionCard({
           })}
         </div>
 
-        {/* 확신도 (제출 전) */}
+        {/* 확신도 (제출 전, 선택사항) */}
         {!submitted && (
           <div className="mt-4">
-            <p className="mb-2 text-xs font-medium text-slate-500">확신도</p>
+            <p className="mb-2 text-xs font-medium text-slate-500">
+              확신도 <span className="text-slate-400">(선택)</span>
+            </p>
             <div className="grid grid-cols-3 gap-2">
               {(["sure", "unsure", "guess"] as Confidence[]).map((c) => (
                 <button
@@ -184,18 +187,14 @@ export default function QuestionCard({
         {!submitted ? (
           <button
             className="btn-primary w-full"
-            disabled={selected === null || confidence === null}
+            disabled={selected === null}
             onClick={handleSubmit}
           >
-            {selected === null
-              ? "보기를 선택하세요"
-              : confidence === null
-                ? "확신도를 선택하세요"
-                : "정답 확인"}
+            {selected === null ? "보기를 선택하세요" : "정답 확인"}
           </button>
         ) : (
           <button className="btn-primary w-full" onClick={onNext}>
-            {isLast ? "세션 완료" : "다음 문제"}
+            {isLast ? "결과 보기" : "다음 문제"}
           </button>
         )}
       </div>
