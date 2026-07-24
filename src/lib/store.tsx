@@ -40,6 +40,10 @@ interface StoreValue {
     answers: Record<string, { selectedIndex: number; isCorrect: boolean }>;
     durationSec: number;
   }) => MockResult;
+  /** 전체 데이터를 JSON 문자열로 내보내기 */
+  exportBundle: () => string;
+  /** JSON 백업 복원(성공 여부 반환) */
+  importBundle: (text: string) => boolean;
   resetAll: () => void;
 }
 
@@ -154,6 +158,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
+  const exportBundle = useCallback(
+    () => JSON.stringify(repository.exportBundle(), null, 2),
+    []
+  );
+
+  const importBundle = useCallback((text: string) => {
+    try {
+      const ok = repository.importBundle(JSON.parse(text));
+      if (ok) {
+        setAttempts(repository.getAttempts());
+        setReviews(repository.getReviews());
+        setMocks(repository.getMocks());
+        setSettings(repository.getSettings());
+      }
+      return ok;
+    } catch {
+      return false;
+    }
+  }, []);
+
   const resetAll = useCallback(() => {
     // 학습 기록만 초기화. 시험일·목표 등 설정은 보존한다.
     repository.resetProgress();
@@ -172,6 +196,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       saveSettings,
       submitAnswer,
       finishMock,
+      exportBundle,
+      importBundle,
       resetAll,
     }),
     [
@@ -183,6 +209,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       saveSettings,
       submitAnswer,
       finishMock,
+      exportBundle,
+      importBundle,
       resetAll,
     ]
   );

@@ -1,6 +1,6 @@
 import type { Question } from "@/lib/types";
 
-// SQLD 시드 20문항. 목표(SQL 과목 보강)에 맞춰 SQL 14 : 데이터모델링 6 비중.
+// SQLD 시드 64문항. 목표(SQL 과목 보강)에 맞춰 SQL 48 : 데이터모델링 16 비중.
 // answerIndex 는 0-base.
 export const QUESTIONS: Question[] = [
   // ─────────────── 데이터 모델링 (6) ───────────────

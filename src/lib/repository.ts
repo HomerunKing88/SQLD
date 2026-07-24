@@ -94,6 +94,40 @@ export const repository = {
     repository.resetProgress();
     window.localStorage.removeItem(KEYS.settings);
   },
+
+  // --- 백업(내보내기/가져오기) ---
+  exportBundle(): BackupBundle {
+    return {
+      app: "sqld-30day",
+      version: 1,
+      attempts: repository.getAttempts(),
+      reviews: repository.getReviews(),
+      mocks: repository.getMocks(),
+      settings: repository.getSettings(),
+    };
+  },
+  /** 백업 복원. 유효하지 않으면 false. */
+  importBundle(data: unknown): boolean {
+    if (!data || typeof data !== "object") return false;
+    const b = data as Partial<BackupBundle>;
+    if (b.app !== "sqld-30day" || !Array.isArray(b.attempts)) return false;
+    write(KEYS.attempts, b.attempts ?? []);
+    write(KEYS.reviews, Array.isArray(b.reviews) ? b.reviews : []);
+    write(KEYS.mocks, Array.isArray(b.mocks) ? b.mocks : []);
+    if (b.settings && typeof b.settings === "object") {
+      write(KEYS.settings, { ...DEFAULT_SETTINGS, ...b.settings });
+    }
+    return true;
+  },
 };
+
+export interface BackupBundle {
+  app: "sqld-30day";
+  version: number;
+  attempts: Attempt[];
+  reviews: Review[];
+  mocks: MockResult[];
+  settings: Settings;
+}
 
 export type Repository = typeof repository;

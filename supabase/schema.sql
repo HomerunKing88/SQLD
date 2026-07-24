@@ -26,10 +26,26 @@ create table if not exists public.attempts (
   selected_index int  not null,
   is_correct     boolean not null,
   confidence     text not null check (confidence in ('sure','unsure','guess')),
+  source         text not null default 'study' check (source in ('study','mock')),
   answered_at    timestamptz not null default now()
 );
 create index if not exists attempts_question_idx on public.attempts(question_id);
 create index if not exists attempts_answered_idx on public.attempts(answered_at);
+create index if not exists attempts_source_idx on public.attempts(source);
+
+-- 모의고사 결과 이력
+create table if not exists public.mock_results (
+  id            uuid primary key default gen_random_uuid(),
+  taken_at      timestamptz not null default now(),
+  total         int  not null,
+  correct       int  not null,
+  data_modeling int  not null,   -- 0~20
+  sql           int  not null,   -- 0~80
+  score         int  not null,   -- 0~100
+  duration_sec  int  not null,
+  passed        boolean not null
+);
+create index if not exists mock_results_taken_idx on public.mock_results(taken_at);
 
 -- 간격 반복 복습 스케줄 (문제당 1행)
 create table if not exists public.reviews (

@@ -49,7 +49,8 @@ interface BuildInput {
 export interface TodaySet {
   questionIds: string[];
   reviewCount: number;
-  newCount: number;
+  newCount: number; // 아직 안 푼 '진짜 신규' 문항 수
+  reservedCount: number; // 은행 소진으로 재출제된(복습성) 문항 수
 }
 
 /** 동일 유형 3개 연속 방지 배치 */
@@ -94,6 +95,7 @@ export function buildTodaySet(input: BuildInput): TodaySet {
     questions.filter((q) => !attemptedIds.has(q.id) && !chosen.has(q.id)),
     weakness
   );
+  const freshIdSet = new Set(fresh.map((q) => q.id));
   const freshSql = fresh.filter((q) => q.subject === "sql");
   const freshDm = fresh.filter((q) => q.subject === "data_modeling");
 
@@ -142,10 +144,13 @@ export function buildTodaySet(input: BuildInput): TodaySet {
   const rest = [...chosen].filter((id) => !reviewIds.includes(id));
   const ordered = [...reviewIds, ...spread(rest, byId)];
 
+  // 신규(아직 안 푼) vs 재출제(은행 소진) 구분 — 재출제를 '신규'로 오표기하지 않는다.
+  const newCount = rest.filter((id) => freshIdSet.has(id)).length;
   return {
     questionIds: ordered,
     reviewCount: reviewIds.length,
-    newCount: ordered.length - reviewIds.length,
+    newCount,
+    reservedCount: rest.length - newCount,
   };
 }
 
