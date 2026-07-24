@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#16a34a",
+  themeColor: "#2f6a53",
   width: "device-width",
   initialScale: 1,
   // 확대(zoom)를 허용해 접근성(WCAG 1.4.4)을 보장 — 텍스트·SQL 표가 많은 앱.

@@ -48,8 +48,8 @@ function png(size, draw) {
   ]);
 }
 
-const BRAND = [22, 163, 74]; // #16a34a 녹색
-const ACCENT = [250, 204, 21]; // #facc15 노란 포인트
+const BRAND = [47, 106, 83]; // #2f6a53 세이지·파인 그린
+const ACCENT = [201, 162, 78]; // #c9a24e 뮤트 허니골드
 const LIGHT = [255, 255, 255];
 
 function make(size) {
