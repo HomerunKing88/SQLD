@@ -135,7 +135,7 @@ export function estimateScore(
   };
 }
 
-/** 확신도 대비 정답 통계 (찍었는데 맞음 / 확실한데 틀림 등) */
+/** 확신도 대비 정답 통계 (찍었는데 맞음 / 확실한데 틀림 등). 모의고사(mock) 제외. */
 export function confidenceBreakdown(attempts: Attempt[]) {
   const buckets = {
     sure: { total: 0, correct: 0 },
@@ -143,6 +143,7 @@ export function confidenceBreakdown(attempts: Attempt[]) {
     guess: { total: 0, correct: 0 },
   };
   for (const a of attempts) {
+    if (a.source === "mock") continue; // 확신도 입력이 없는 모의고사는 제외
     const b = buckets[a.confidence];
     b.total += 1;
     if (a.isCorrect) b.correct += 1;

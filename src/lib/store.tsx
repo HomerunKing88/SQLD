@@ -8,9 +8,16 @@ import {
   useMemo,
   useState,
 } from "react";
-import type { Attempt, Confidence, Review, Settings } from "./types";
+import type {
+  Attempt,
+  Confidence,
+  MockResult,
+  Review,
+  Settings,
+} from "./types";
 import { repository } from "./repository";
-import { nextReviewOnAnswer } from "./srs";
+import { nextReviewOnAnswer, scheduleOnWrong } from "./srs";
+import { scoreMock } from "./mock";
 import { QUESTIONS } from "@/data/questions";
 
 interface StoreValue {
@@ -18,6 +25,7 @@ interface StoreValue {
   settings: Settings;
   attempts: Attempt[];
   reviews: Review[];
+  mocks: MockResult[];
   saveSettings: (s: Settings) => void;
   /** 채점 처리: attempt 저장 + 복습 스케줄 갱신 */
   submitAnswer: (args: {
@@ -26,6 +34,12 @@ interface StoreValue {
     isCorrect: boolean;
     confidence: Confidence;
   }) => void;
+  /** 모의고사 제출: 문항별 기록(오답만 복습 등록) + 실배점 채점 결과 저장 */
+  finishMock: (args: {
+    ids: string[];
+    answers: Record<string, { selectedIndex: number; isCorrect: boolean }>;
+    durationSec: number;
+  }) => MockResult;
   resetAll: () => void;
 }
 
@@ -51,6 +65,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<Settings>(repository.getSettings());
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [mocks, setMocks] = useState<MockResult[]>([]);
 
   useEffect(() => {
     const s = ensureExamDate(repository.getSettings());
@@ -58,6 +73,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setSettings(s);
     setAttempts(repository.getAttempts());
     setReviews(repository.getReviews());
+    setMocks(repository.getMocks());
     setReady(true);
   }, []);
 
@@ -96,6 +112,56 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
+  const finishMock: StoreValue["finishMock"] = useCallback(
+    ({ ids, answers, durationSec }) => {
+      const now = new Date();
+      const correctById: Record<string, boolean> = {};
+      for (const id of ids) {
+        const a = answers[id];
+        correctById[id] = a?.isCorrect === true; // 미응답은 오답 처리
+        if (!a) continue;
+        // 모의고사 답안도 기록(source: mock). 확신도 통계는 mock 제외.
+        repository.addAttempt({
+          id: genId(),
+          questionId: id,
+          selectedIndex: a.selectedIndex,
+          isCorrect: a.isCorrect,
+          confidence: "unsure",
+          answeredAt: now.toISOString(),
+          source: "mock",
+        });
+        // 복습은 '틀린' 문항만 등록(정답 문항까지 복습망에 넣지 않음)
+        if (!a.isCorrect) {
+          const existing = repository.getReview(id);
+          repository.upsertReview(
+            id,
+            existing
+              ? nextReviewOnAnswer(id, existing, false, "unsure", now)
+              : scheduleOnWrong(id, now)
+          );
+        }
+      }
+      const graded = scoreMock({
+        questions: QUESTIONS,
+        ids,
+        correctById,
+        durationSec,
+      });
+      const result: MockResult = {
+        id: genId(),
+        takenAt: now.toISOString(),
+        ...graded,
+      };
+      repository.addMock(result);
+
+      setAttempts(repository.getAttempts());
+      setReviews(repository.getReviews());
+      setMocks(repository.getMocks());
+      return result;
+    },
+    []
+  );
+
   const resetAll = useCallback(() => {
     repository.reset();
     const s = ensureExamDate(repository.getSettings());
@@ -103,6 +169,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setSettings(s);
     setAttempts([]);
     setReviews([]);
+    setMocks([]);
   }, []);
 
   const value = useMemo<StoreValue>(
@@ -111,11 +178,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       settings,
       attempts,
       reviews,
+      mocks,
       saveSettings,
       submitAnswer,
+      finishMock,
       resetAll,
     }),
-    [ready, settings, attempts, reviews, saveSettings, submitAnswer, resetAll]
+    [
+      ready,
+      settings,
+      attempts,
+      reviews,
+      mocks,
+      saveSettings,
+      submitAnswer,
+      finishMock,
+      resetAll,
+    ]
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
