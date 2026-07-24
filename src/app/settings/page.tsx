@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
+import ConfirmModal from "@/components/ConfirmModal";
 
 export default function SettingsPage() {
   const { ready, settings, saveSettings, resetAll } = useStore();
@@ -9,6 +10,7 @@ export default function SettingsPage() {
   const [dailyGoal, setDailyGoal] = useState(20);
   const [sqlWeight, setSqlWeight] = useState(70);
   const [saved, setSaved] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   useEffect(() => {
     if (ready) {
@@ -93,19 +95,29 @@ export default function SettingsPage() {
       <div className="card">
         <p className="text-sm font-semibold text-slate-700">데이터 관리</p>
         <p className="mt-1 text-xs text-slate-400">
-          모든 풀이 기록·복습·설정은 이 기기에만 저장됩니다.
+          모든 기록은 이 기기에만 저장됩니다. 유실에 대비해 백업을 권장해요.
         </p>
         <button
           className="btn-ghost mt-3 w-full text-rose-600"
-          onClick={() => {
-            if (confirm("모든 학습 기록을 삭제할까요? 되돌릴 수 없습니다.")) {
-              resetAll();
-            }
-          }}
+          onClick={() => setConfirmReset(true)}
         >
           학습 기록 초기화
         </button>
       </div>
+
+      <ConfirmModal
+        open={confirmReset}
+        title="학습 기록을 초기화할까요?"
+        message="풀이·복습·모의고사 기록이 삭제됩니다. (시험일·설정은 유지) 되돌릴 수 없습니다."
+        confirmLabel="초기화"
+        cancelLabel="취소"
+        tone="danger"
+        onConfirm={() => {
+          setConfirmReset(false);
+          resetAll();
+        }}
+        onCancel={() => setConfirmReset(false)}
+      />
     </div>
   );
 }

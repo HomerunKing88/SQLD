@@ -5,11 +5,7 @@ import { useMemo } from "react";
 import { questions, useStore } from "@/lib/store";
 import { daysUntil, ddayLabel } from "@/lib/dday";
 import { buildTodaySet } from "@/lib/session";
-import {
-  estimateScore,
-  accuracyBySubject,
-  accuracyByCategoryWith,
-} from "@/lib/scoring";
+import { estimateScore, accuracyByCategoryWith } from "@/lib/scoring";
 import { dueReviewIds } from "@/lib/srs";
 import { dailyProgress } from "@/lib/streak";
 import { CATEGORY_LABEL, type Category } from "@/lib/types";
@@ -24,10 +20,6 @@ export default function HomePage() {
     [attempts, reviews, settings]
   );
   const score = useMemo(() => estimateScore(attempts, questions), [attempts]);
-  const bySub = useMemo(
-    () => accuracyBySubject(attempts, questions),
-    [attempts]
-  );
   const dueCount = dueReviewIds(reviews).length;
   const daily = useMemo(
     () => dailyProgress(attempts, settings.dailyGoal),
@@ -51,53 +43,41 @@ export default function HomePage() {
 
   return (
     <div className="space-y-3">
-      {/* D-day 히어로 — 녹색, 포인트는 노란 밑줄 */}
-      <div className="rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 p-5 text-white shadow-card">
-        <div className="flex items-start justify-between">
+      {/* D-day 히어로 (시험일 미설정 시 설정 유도) */}
+      {dday === null ? (
+        <Link
+          href="/settings"
+          className="flex items-center gap-3 rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 p-5 text-white shadow-card"
+        >
+          <span className="text-3xl">📅</span>
           <div>
-            <p className="text-xs font-medium text-brand-100">시험까지</p>
-            <p className="mt-1 inline-block text-4xl font-black tracking-tight">
-              {ddayLabel(dday)}
-              <span className="mt-1 block h-1 w-12 rounded-full bg-accent-400" />
+            <p className="text-base font-black">시험일을 설정하세요</p>
+            <p className="mt-0.5 text-xs text-brand-100">
+              D-day와 학습 계획을 위해 필요해요 →
             </p>
           </div>
-          {daily.streak > 0 && (
-            <span className="chip bg-accent-400 text-accent-ink">
-              🔥 {daily.streak}일 연속
-            </span>
-          )}
+        </Link>
+      ) : (
+        <div className="rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 p-5 text-white shadow-card">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-xs font-medium text-brand-100">시험까지</p>
+              <p className="mt-1 inline-block text-4xl font-black tracking-tight">
+                {ddayLabel(dday)}
+                <span className="mt-1 block h-1 w-12 rounded-full bg-accent-400" />
+              </p>
+            </div>
+            {daily.streak > 0 && (
+              <span className="chip bg-accent-400 text-accent-ink">
+                🔥 {daily.streak}일 연속
+              </span>
+            )}
+          </div>
+          <p className="mt-2 text-xs text-brand-100">{settings.examDate}</p>
         </div>
-        <p className="mt-2 text-xs text-brand-100">
-          {settings.examDate || "설정에서 시험일을 정하세요"}
-        </p>
-      </div>
+      )}
 
-      {/* 예상 점수 */}
-      <div className="card">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-bold text-slate-500">예상 점수</p>
-          {!score.enoughSample && (
-            <span className="chip bg-accent-100 text-accent-ink">표본 부족</span>
-          )}
-        </div>
-        <div className="mt-1 flex items-end gap-2">
-          <span className="text-4xl font-black text-brand-700">
-            {score.total}
-          </span>
-          <span className="mb-1 text-sm text-slate-400">/ 100 (합격 60)</span>
-        </div>
-        <div className="mt-3 space-y-2 text-xs">
-          <ScoreRow label="데이터 모델링" value={score.dataModeling} max={20} />
-          <ScoreRow label="SQL 기본 및 활용" value={score.sql} max={80} />
-        </div>
-        <p className="mt-3 text-xs text-slate-500">
-          {passProjected
-            ? "🎯 현재 페이스면 합격권입니다. 유지!"
-            : `합격까지 ${60 - score.total}점 더 필요해요. SQL 정답률을 끌어올리세요.`}
-        </p>
-      </div>
-
-      {/* 오늘의 학습 CTA — 진행률 & 목표 */}
+      {/* 오늘의 학습 — 주요 액션(상단 배치, 엄지 도달) */}
       <div className="card">
         <div className="flex items-center justify-between">
           <p className="text-sm font-bold text-slate-500">오늘의 학습</p>
@@ -134,6 +114,31 @@ export default function HomePage() {
               ? "이어서 학습하기"
               : "오늘의 학습 시작"}
         </Link>
+      </div>
+
+      {/* 예상 점수 */}
+      <div className="card">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-bold text-slate-500">예상 점수</p>
+          {!score.enoughSample && (
+            <span className="chip bg-accent-100 text-accent-ink">표본 부족</span>
+          )}
+        </div>
+        <div className="mt-1 flex items-end gap-2">
+          <span className="text-4xl font-black text-brand-700">
+            {score.total}
+          </span>
+          <span className="mb-1 text-sm text-slate-400">/ 100 (합격 60)</span>
+        </div>
+        <div className="mt-3 space-y-2 text-xs">
+          <ScoreRow label="데이터 모델링" value={score.dataModeling} max={20} />
+          <ScoreRow label="SQL 기본 및 활용" value={score.sql} max={80} />
+        </div>
+        <p className="mt-3 text-xs text-slate-500">
+          {passProjected
+            ? "🎯 현재 페이스면 합격권입니다. 유지!"
+            : `합격까지 ${60 - score.total}점 더 필요해요. SQL 정답률을 끌어올리세요.`}
+        </p>
       </div>
 
       {/* 모의고사 진입 + 최근 점수 */}
@@ -183,21 +188,6 @@ export default function HomePage() {
         <span className="ml-auto text-brand-500">→</span>
       </Link>
 
-      {/* 영역별 정답률 요약 */}
-      <div className="card">
-        <p className="mb-2 text-sm font-bold text-slate-500">영역별 정답률</p>
-        <AccRow
-          label="데이터 모델링"
-          rate={bySub.data_modeling.rate}
-          total={bySub.data_modeling.total}
-        />
-        <AccRow
-          label="SQL 기본 및 활용"
-          rate={bySub.sql.rate}
-          total={bySub.sql.total}
-        />
-      </div>
-
       {/* 복습 대기 — 흰 카드 + 노란 포인트 */}
       {dueCount > 0 && (
         <Link
@@ -238,34 +228,6 @@ function ScoreRow({
         <div
           className="h-full bg-brand-500"
           style={{ width: `${(value / max) * 100}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function AccRow({
-  label,
-  rate,
-  total,
-}: {
-  label: string;
-  rate: number;
-  total: number;
-}) {
-  return (
-    <div className="mb-2 last:mb-0">
-      <div className="mb-1 flex justify-between text-xs">
-        <span className="text-slate-500">{label}</span>
-        <span className="font-semibold text-slate-700">
-          {total === 0 ? "-" : `${Math.round(rate * 100)}%`}
-          <span className="ml-1 text-slate-400">({total})</span>
-        </span>
-      </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-        <div
-          className="h-full bg-brand-500"
-          style={{ width: `${rate * 100}%` }}
         />
       </div>
     </div>

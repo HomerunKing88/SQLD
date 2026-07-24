@@ -32,7 +32,11 @@ for (let i = 0; i < total; i++) {
     await page.locator("button", { hasText: /^다음$/ }).click();
   }
 }
-await page.locator("button", { hasText: "제출하기" }).click();
+// 마지막 문항의 제출하기 → 스타일 확인 모달 → 모달의 제출하기
+await page.locator("button", { hasText: "제출하기" }).first().click();
+await page.waitForSelector("[role=dialog]", { timeout: 4000 });
+ok(true, "제출 확인 모달 표시(네이티브 confirm 대체)");
+await page.locator("[role=dialog] button", { hasText: "제출하기" }).click();
 await page.waitForSelector("text=/\\/ 100/", { timeout: 8000 });
 ok(true, "제출 후 결과 채점 화면");
 const scoreShown = await page.locator("text=/합격까지|합격 기준/").count();

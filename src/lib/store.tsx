@@ -52,14 +52,6 @@ function genId(): string {
   return `a_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
 }
 
-/** 최초 진입 시 시험일이 없으면 30일 뒤로 기본 설정 */
-function ensureExamDate(s: Settings): Settings {
-  if (s.examDate) return s;
-  const d = new Date();
-  d.setDate(d.getDate() + 30);
-  return { ...s, examDate: d.toISOString().slice(0, 10) };
-}
-
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   // 초기값은 상수(SSR/hydration 일관). 실제 값은 아래 effect에서 로드.
@@ -69,9 +61,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [mocks, setMocks] = useState<MockResult[]>([]);
 
   useEffect(() => {
-    const s = ensureExamDate(repository.getSettings());
-    repository.saveSettings(s);
-    setSettings(s);
+    // 시험일은 자동으로 채우지 않는다(가짜 D-day 방지). 사용자가 설정에서 지정.
+    setSettings(repository.getSettings());
     setAttempts(repository.getAttempts());
     setReviews(repository.getReviews());
     setMocks(repository.getMocks());

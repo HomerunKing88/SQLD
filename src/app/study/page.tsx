@@ -16,7 +16,7 @@ interface Result {
 
 type Mode = "today" | "drill";
 
-// 진행 중 세션을 sessionStorage에 보관 → 새로고침/앱 전환 후에도 이어풀기
+// 진행 중 세션을 localStorage에 보관 → 앱을 닫아도(통근 사이) 이어풀기
 const SESSION_KEY = "sqld.session";
 
 interface SavedSession {
@@ -30,17 +30,31 @@ interface SavedSession {
   >;
 }
 
-function requestedMode(): Mode {
-  if (typeof window === "undefined") return "today";
+/** URL에 명시된 모드(?mode=drill)만 반환. 없으면 null(=진행 중 세션 우선). */
+function urlMode(): Mode | null {
+  if (typeof window === "undefined") return null;
   return new URLSearchParams(window.location.search).get("mode") === "drill"
     ? "drill"
-    : "today";
+    : null;
+}
+
+function isValidSaved(saved: SavedSession | null, qMap: Map<string, unknown>): saved is SavedSession {
+  return Boolean(
+    saved &&
+      Array.isArray(saved.ids) &&
+      saved.ids.length > 0 &&
+      saved.answers != null &&
+      typeof saved.cursor === "number" &&
+      saved.cursor >= 0 &&
+      saved.cursor < saved.ids.length &&
+      saved.ids.every((id) => qMap.has(id))
+  );
 }
 
 function loadSession(): SavedSession | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = window.sessionStorage.getItem(SESSION_KEY);
+    const raw = window.localStorage.getItem(SESSION_KEY);
     return raw ? (JSON.parse(raw) as SavedSession) : null;
   } catch {
     return null;
@@ -48,11 +62,15 @@ function loadSession(): SavedSession | null {
 }
 function saveSession(s: SavedSession): void {
   if (typeof window === "undefined") return;
-  window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(s));
+  try {
+    window.localStorage.setItem(SESSION_KEY, JSON.stringify(s));
+  } catch {
+    /* 저장 실패 무시 */
+  }
 }
 function clearSession(): void {
   if (typeof window === "undefined") return;
-  window.sessionStorage.removeItem(SESSION_KEY);
+  window.localStorage.removeItem(SESSION_KEY);
 }
 
 export default function StudyPage() {
@@ -72,25 +90,31 @@ export default function StudyPage() {
         .filter((r) => new Date(r.dueAt).getTime() <= Date.now())
         .map((r) => r.questionId)
     );
-    const mode = requestedMode();
+    const explicit = urlMode(); // 'drill' 또는 null
     const saved = loadSession();
-    const valid =
-      saved &&
-      saved.mode === mode && // 모드가 다르면 새로 구성
-      Array.isArray(saved.ids) &&
-      saved.ids.length > 0 &&
-      saved.answers != null &&
-      saved.ids.every((id) => qMap.has(id)) &&
-      saved.cursor < saved.ids.length;
-    if (valid) {
+    const savedValid = isValidSaved(saved, qMap);
+
+    // 명시적 특훈 진입: 저장본이 특훈이면 이어서, 아니면 새 특훈 구성
+    if (explicit === "drill") {
+      if (savedValid && saved!.mode === "drill") {
+        setSession(saved);
+        return;
+      }
+      const ids = buildWeakDrillSet({ questions, attempts, settings }).questionIds;
+      const fresh: SavedSession = { mode: "drill", ids, cursor: 0, answers: {} };
+      setSession(fresh);
+      if (ids.length > 0) saveSession(fresh);
+      return;
+    }
+
+    // 학습 탭(모드 미지정): 진행 중 세션이 있으면 모드 불문 이어풀기
+    if (savedValid) {
       setSession(saved);
       return;
     }
-    const ids =
-      mode === "drill"
-        ? buildWeakDrillSet({ questions, attempts, settings }).questionIds
-        : buildTodaySet({ questions, attempts, reviews, settings }).questionIds;
-    const fresh: SavedSession = { mode, ids, cursor: 0, answers: {} };
+    const ids = buildTodaySet({ questions, attempts, reviews, settings })
+      .questionIds;
+    const fresh: SavedSession = { mode: "today", ids, cursor: 0, answers: {} };
     setSession(fresh);
     if (ids.length > 0) saveSession(fresh);
   }, [ready, attempts, reviews, settings, qMap]);
