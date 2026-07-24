@@ -14,6 +14,7 @@ import {
   dailyProgress,
 } from "../src/lib/streak.ts";
 import { buildTodaySet, buildWeakDrillSet } from "../src/lib/session.ts";
+import { accuracyByTag, weakTags } from "../src/lib/scoring.ts";
 import type { Attempt, Confidence, Question, Review, Settings } from "../src/lib/types.ts";
 
 const NOW = new Date("2026-07-23T09:00:00Z");
@@ -194,4 +195,27 @@ test("buildWeakDrillSet: 취약 유형을 focus로, 취약 문제 우선", () =>
   assert.equal(res.focusCategory, "sql_advanced", "가장 취약한 유형이 focus");
   assert.ok(res.questionIds.includes("adv1"), "취약 오답 문항이 포함");
   assert.ok(res.questionIds.length <= 2, "목표 수 이내");
+});
+
+// ---------- 태그별 드릴다운 ----------
+test("accuracyByTag / weakTags: 태그별 집계와 취약 정렬", () => {
+  const qs: Question[] = [
+    { ...mkQ("j1", "sql_advanced"), tags: ["JOIN"] },
+    { ...mkQ("j2", "sql_advanced"), tags: ["JOIN", "NULL"] },
+    { ...mkQ("n1", "sql_basics"), tags: ["NULL"] },
+  ];
+  // JOIN: j1(오답), j2(오답) → 0/2. NULL: j2(오답), n1(정답) → 1/2
+  const at: Attempt[] = [
+    { id: "1", questionId: "j1", selectedIndex: 0, isCorrect: false, confidence: "guess", answeredAt: "2026-07-22T00:00:00Z" },
+    { id: "2", questionId: "j2", selectedIndex: 0, isCorrect: false, confidence: "guess", answeredAt: "2026-07-22T00:00:00Z" },
+    { id: "3", questionId: "n1", selectedIndex: 0, isCorrect: true, confidence: "sure", answeredAt: "2026-07-22T00:00:00Z" },
+  ];
+  const byTag = accuracyByTag(at, qs);
+  assert.equal(byTag.get("JOIN")!.total, 2);
+  assert.equal(byTag.get("JOIN")!.correct, 0);
+  assert.equal(byTag.get("NULL")!.total, 2);
+  assert.equal(byTag.get("NULL")!.correct, 1);
+
+  const weak = weakTags(at, qs, { minTotal: 1, limit: 8 });
+  assert.equal(weak[0].tag, "JOIN", "가장 취약한 태그(JOIN 0%)가 먼저");
 });

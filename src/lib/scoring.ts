@@ -61,6 +61,51 @@ export function accuracyByCategoryWith(
   return out;
 }
 
+/** 태그(세부 개념)별 정답률. 한 문제의 각 태그에 최신 결과를 반영. */
+export function accuracyByTag(
+  attempts: Attempt[],
+  questions: Question[]
+): Map<string, Accuracy> {
+  const qMap = new Map(questions.map((q) => [q.id, q]));
+  const latest = [...latestAttempts(attempts).values()];
+  const agg = new Map<string, { c: number; t: number }>();
+  for (const a of latest) {
+    const q = qMap.get(a.questionId);
+    if (!q) continue;
+    for (const tag of q.tags) {
+      const cur = agg.get(tag) ?? { c: 0, t: 0 };
+      cur.t += 1;
+      if (a.isCorrect) cur.c += 1;
+      agg.set(tag, cur);
+    }
+  }
+  const out = new Map<string, Accuracy>();
+  for (const [tag, { c, t }] of agg) {
+    out.set(tag, { total: t, correct: c, rate: t ? c / t : 0 });
+  }
+  return out;
+}
+
+export interface TagStat extends Accuracy {
+  tag: string;
+}
+
+/** 취약 태그(정답률 낮은 순). minTotal 이상 표본만, 최대 limit개. */
+export function weakTags(
+  attempts: Attempt[],
+  questions: Question[],
+  opts: { minTotal?: number; limit?: number } = {}
+): TagStat[] {
+  const minTotal = opts.minTotal ?? 1;
+  const limit = opts.limit ?? 8;
+  const list: TagStat[] = [];
+  for (const [tag, acc] of accuracyByTag(attempts, questions)) {
+    if (acc.total >= minTotal) list.push({ tag, ...acc });
+  }
+  list.sort((a, b) => a.rate - b.rate || b.total - a.total);
+  return list.slice(0, limit);
+}
+
 export interface EstimatedScore {
   dataModeling: number; // 0~20
   sql: number; // 0~80

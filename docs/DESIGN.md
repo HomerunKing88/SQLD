@@ -172,9 +172,19 @@ SQLD 출제 기준(과목 구조)에 맞춘 분류 체계.
 구조:
 ```
 lib/repository.ts        // 인터페이스 + 로컬(localStorage) 구현
-lib/srs.ts               // 복습 간격 계산
-lib/scoring.ts           // 예상점수·정답률
-data/questions.ts        // seed 60문항 (요약본 기반)
+lib/srs.ts               // 복습 간격 계산 (확신도 반영)
+lib/scoring.ts           // 예상점수·정답률·태그별 정답률
+lib/session.ts           // 오늘의 세트 / 취약 유형 특훈 세트
+lib/streak.ts            // 일일 진행·연속 학습일
+data/questions.ts        // seed 64문항 (요약본 기반)
 supabase/schema.sql      // (선택) 테이블 DDL
 supabase/seed.sql        // (선택) 문제 시드
 ```
+
+### 2.8 취약 유형 특훈 & 태그 드릴다운
+
+- **특훈 모드**(`/study?mode=drill`): 정답률 낮은 유형 + 최근 오답 + SQL 우선순위로
+  세트를 구성(`buildWeakDrillSet`). '오늘의 세트'와 달리 취약 유형을 몰아서 출제한다.
+  세션은 모드별로 저장되어 이어풀기와 충돌하지 않는다.
+- **태그 드릴다운**(통계): 문제 태그(JOIN·NULL·ROWNUM 등) 단위 정답률을 집계
+  (`accuracyByTag`/`weakTags`)해 '취약 개념 TOP'으로 표시 → 세부 약점을 콕 짚어 준다.

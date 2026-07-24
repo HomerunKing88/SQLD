@@ -7,6 +7,7 @@ import {
   accuracyBySubject,
   confidenceBreakdown,
   estimateScore,
+  weakTags,
 } from "@/lib/scoring";
 import {
   CATEGORY_LABEL,
@@ -28,6 +29,10 @@ export default function StatsPage() {
     [attempts]
   );
   const conf = useMemo(() => confidenceBreakdown(attempts), [attempts]);
+  const weak = useMemo(
+    () => weakTags(attempts, questions, { minTotal: 1, limit: 8 }),
+    [attempts]
+  );
 
   if (!ready) {
     return <div className="py-10 text-center text-slate-400">불러오는 중…</div>;
@@ -105,6 +110,46 @@ export default function StatsPage() {
           })
         )}
       </div>
+
+      {/* 취약 개념 (태그별 드릴다운) */}
+      {weak.length > 0 && (
+        <div className="card">
+          <p className="mb-1 text-sm font-bold text-slate-500">취약 개념 TOP</p>
+          <p className="mb-3 text-xs text-slate-400">
+            정답률이 낮은 세부 개념부터 다시 확인하세요.
+          </p>
+          <ul className="space-y-2">
+            {weak.map((t) => {
+              const pct = Math.round(t.rate * 100);
+              const tone =
+                pct >= 70
+                  ? "bg-brand-500"
+                  : pct >= 40
+                    ? "bg-accent-400"
+                    : "bg-rose-400";
+              return (
+                <li key={t.tag} className="flex items-center gap-2">
+                  <span className="w-28 flex-none truncate text-xs font-medium text-slate-600">
+                    #{t.tag}
+                  </span>
+                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100">
+                    <div
+                      className={`h-full ${tone}`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  <span className="w-16 flex-none text-right text-xs font-semibold text-slate-700">
+                    {pct}%
+                    <span className="ml-1 text-slate-400">
+                      ({t.correct}/{t.total})
+                    </span>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
 
       {/* 확신도 */}
       <div className="card">
