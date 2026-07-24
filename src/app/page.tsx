@@ -15,7 +15,8 @@ import { dailyProgress } from "@/lib/streak";
 import { CATEGORY_LABEL, type Category } from "@/lib/types";
 
 export default function HomePage() {
-  const { ready, settings, attempts, reviews } = useStore();
+  const { ready, settings, attempts, reviews, mocks } = useStore();
+  const lastMock = mocks.length ? mocks[mocks.length - 1] : null;
 
   const dday = daysUntil(settings.examDate);
   const today = useMemo(
@@ -134,6 +135,34 @@ export default function HomePage() {
               : "오늘의 학습 시작"}
         </Link>
       </div>
+
+      {/* 모의고사 진입 + 최근 점수 */}
+      <Link
+        href="/exam"
+        className="flex items-center gap-3 rounded-2xl border border-slate-200/70 bg-white p-4 shadow-card"
+      >
+        <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-brand-50 text-lg">
+          📝
+        </span>
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-slate-700">모의고사</p>
+          <p className="truncate text-xs text-slate-400">
+            {lastMock
+              ? `최근 ${lastMock.score}점 · ${lastMock.passed ? "합격권" : "재도전"}`
+              : "실제 배점으로 실력 점검"}
+          </p>
+        </div>
+        {lastMock && (
+          <span
+            className={`ml-auto text-lg font-black ${
+              lastMock.passed ? "text-brand-600" : "text-slate-400"
+            }`}
+          >
+            {lastMock.score}
+          </span>
+        )}
+        {!lastMock && <span className="ml-auto text-brand-500">→</span>}
+      </Link>
 
       {/* 취약 유형 특훈 진입 */}
       <Link

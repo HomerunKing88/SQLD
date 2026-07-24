@@ -1,11 +1,12 @@
 // 저장소 추상화 — 기본 구현은 localStorage (오프라인·무로그인).
 // Supabase 동기화가 필요하면 동일 인터페이스로 교체 가능.
-import type { Attempt, Review, Settings } from "./types";
+import type { Attempt, MockResult, Review, Settings } from "./types";
 
 const KEYS = {
   attempts: "sqld.attempts",
   reviews: "sqld.reviews",
   settings: "sqld.settings",
+  mocks: "sqld.mocks",
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -55,6 +56,16 @@ export const repository = {
     write(KEYS.reviews, all);
   },
 
+  // --- mock exams ---
+  getMocks(): MockResult[] {
+    return read<MockResult[]>(KEYS.mocks, []);
+  },
+  addMock(m: MockResult): void {
+    const all = repository.getMocks();
+    all.push(m);
+    write(KEYS.mocks, all);
+  },
+
   // --- settings ---
   getSettings(): Settings {
     const s = read<Settings>(KEYS.settings, DEFAULT_SETTINGS);
@@ -69,6 +80,7 @@ export const repository = {
     window.localStorage.removeItem(KEYS.attempts);
     window.localStorage.removeItem(KEYS.reviews);
     window.localStorage.removeItem(KEYS.settings);
+    window.localStorage.removeItem(KEYS.mocks);
   },
 };
 

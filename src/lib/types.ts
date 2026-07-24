@@ -48,6 +48,20 @@ export interface Attempt {
   isCorrect: boolean;
   confidence: Confidence;
   answeredAt: string; // ISO
+  source?: "study" | "mock"; // 미지정=study
+}
+
+/** 모의고사 1회 결과 */
+export interface MockResult {
+  id: string;
+  takenAt: string; // ISO
+  total: number; // 총 문항 수
+  correct: number; // 맞힌 문항 수
+  dataModeling: number; // 0~20
+  sql: number; // 0~80
+  score: number; // 0~100 (실배점 합)
+  durationSec: number; // 소요 시간(초)
+  passed: boolean; // 60점 이상
 }
 
 /** 간격 반복 복습 스케줄 (문제당 1행) */
