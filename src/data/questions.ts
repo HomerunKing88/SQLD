@@ -1,6 +1,6 @@
 import type { Question } from "@/lib/types";
 
-// SQLD 시드 64문항. 목표(SQL 과목 보강)에 맞춰 SQL 48 : 데이터모델링 16 비중.
+// SQLD 시드 94문항(기출유형 30 포함). SQL 75 : 데이터모델링 19 비중.
 // answerIndex 는 0-base.
 export const QUESTIONS: Question[] = [
   // ─────────────── 데이터 모델링 (6) ───────────────
@@ -1355,5 +1355,517 @@ export const QUESTIONS: Question[] = [
         },
       ],
     },
+  },
+
+  // ═══════════════ 기출 유형 (오리지널, GICHUL_CONCEPTS 근거) q065~q094 ═══════════════
+  {
+    id: "q065",
+    subject: "sql",
+    category: "sql_basics",
+    difficulty: 2,
+    stem: "다음 중 문법 오류가 있는 SQL은? (Oracle)",
+    choices: [
+      "SELECT ename, sal*12 AS yearly FROM emp ORDER BY yearly",
+      "SELECT deptno, COUNT(*) FROM emp GROUP BY deptno HAVING COUNT(*) > 3",
+      "SELECT ename, sal*12 AS yearly FROM emp WHERE yearly > 30000",
+      "SELECT DISTINCT deptno FROM emp",
+    ],
+    answerIndex: 2,
+    explanation:
+      "WHERE는 SELECT보다 먼저 실행되므로 SELECT에서 만든 별칭(yearly)을 WHERE에서 쓸 수 없다. `WHERE sal*12 > 30000`으로 써야 한다. 별칭은 ORDER BY에서만 사용 가능.",
+    tags: ["기출유형", "실행순서", "ALIAS"],
+  },
+  {
+    id: "q066",
+    subject: "sql",
+    category: "sql_basics",
+    difficulty: 1,
+    stem: "sal=300, comm=NULL인 사원에 대해 SELECT sal + comm 의 결과는?",
+    choices: ["300", "0", "NULL", "오류"],
+    answerIndex: 2,
+    explanation:
+      "NULL과의 산술 연산 결과는 NULL이다(0 아님). 300을 원하면 NVL(comm,0)로 감싸야 한다.",
+    tags: ["기출유형", "NULL"],
+  },
+  {
+    id: "q067",
+    subject: "sql",
+    category: "sql_basics",
+    difficulty: 2,
+    stem: "comm에 NULL 4개를 포함한 emp 10행에서 결과가 6인 것은?",
+    choices: [
+      "COUNT(*)",
+      "COUNT(comm)",
+      "SUM(comm) / AVG(comm)",
+      "COUNT(1)",
+    ],
+    answerIndex: 1,
+    explanation:
+      "COUNT(컬럼)은 NULL을 제외하고 센다 → 10-4=6. COUNT(*), COUNT(1)은 전체 행 10.",
+    tags: ["기출유형", "COUNT", "NULL"],
+  },
+  {
+    id: "q068",
+    subject: "sql",
+    category: "sql_basics",
+    difficulty: 2,
+    stem: "NVL2(comm, sal+comm, sal) 의 의미로 옳은 것은?",
+    choices: [
+      "comm이 NULL이면 sal+comm 반환",
+      "comm이 NOT NULL이면 sal+comm, NULL이면 sal 반환",
+      "항상 sal+comm 반환",
+      "comm이 NULL이면 오류",
+    ],
+    answerIndex: 1,
+    explanation:
+      "NVL2(A,B,C)는 A가 NOT NULL이면 B, NULL이면 C. 즉 comm이 있으면 sal+comm, 없으면 sal.",
+    tags: ["기출유형", "NVL"],
+  },
+  {
+    id: "q069",
+    subject: "sql",
+    category: "sql_basics",
+    difficulty: 2,
+    stem: "INSTR('DATA-BASE', '-') 의 결과는? (Oracle, 위치는 1부터)",
+    choices: ["4", "5", "6", "0"],
+    answerIndex: 1,
+    explanation:
+      "INSTR은 찾는 문자의 위치를 반환한다. D(1)A(2)T(3)A(4)-(5) → '-'는 5번째.",
+    tags: ["기출유형", "문자함수", "INSTR"],
+  },
+  {
+    id: "q070",
+    subject: "sql",
+    category: "sql_basics",
+    difficulty: 3,
+    stem: "TRUNC(1278, -2) 의 결과는?",
+    choices: ["1200", "1300", "1278", "1000"],
+    answerIndex: 0,
+    explanation:
+      "TRUNC의 자리수가 음수면 정수부를 절사한다. -2는 백의 자리 아래를 버림 → 1200.",
+    tags: ["기출유형", "숫자함수", "TRUNC"],
+  },
+  {
+    id: "q071",
+    subject: "sql",
+    category: "sql_basics",
+    difficulty: 2,
+    stem: "다음 중 결과가 옳지 않은 것은?",
+    choices: [
+      "CEIL(3.2) = 4",
+      "FLOOR(3.8) = 3",
+      "CEIL(-2.5) = -2",
+      "FLOOR(-2.5) = -2",
+    ],
+    answerIndex: 3,
+    explanation:
+      "FLOOR는 내림(−∞ 방향)이므로 FLOOR(-2.5) = -3이다. CEIL(-2.5)=-2는 옳다.",
+    tags: ["기출유형", "숫자함수", "FLOOR"],
+  },
+  {
+    id: "q072",
+    subject: "sql",
+    category: "sql_basics",
+    difficulty: 2,
+    stem: "CASE로는 되지만 Oracle DECODE로는 표현하기 어려운 것은?",
+    choices: [
+      "특정 값과 '같은지' 비교",
+      "'범위'(>, <=) 조건 비교",
+      "컬럼 값을 그대로 반환",
+      "여러 값을 매핑",
+    ],
+    answerIndex: 1,
+    explanation:
+      "DECODE는 '=' 동등 비교만 가능하다. 범위 조건(>, <=)은 CASE로만 표현할 수 있다.",
+    tags: ["기출유형", "CASE", "DECODE"],
+  },
+  {
+    id: "q073",
+    subject: "sql",
+    category: "sql_basics",
+    difficulty: 2,
+    stem: "WHERE deptno=10 OR deptno=20 AND sal>300 은 어떻게 해석되는가?",
+    choices: [
+      "(deptno=10 OR deptno=20) AND sal>300",
+      "deptno=10 OR (deptno=20 AND sal>300)",
+      "왼쪽부터 순서대로 평가",
+      "문법 오류",
+    ],
+    answerIndex: 1,
+    explanation:
+      "AND가 OR보다 우선순위가 높다 → deptno=10 OR (deptno=20 AND sal>300).",
+    tags: ["기출유형", "연산자우선순위"],
+  },
+  {
+    id: "q074",
+    subject: "sql",
+    category: "sql_basics",
+    difficulty: 1,
+    stem: "전화번호가 '02-'로 시작하는 행을 찾는 조건으로 옳은 것은?",
+    choices: [
+      "WHERE tel LIKE '02-%'",
+      "WHERE tel LIKE '02_%'",
+      "WHERE tel = '02-%'",
+      "WHERE tel LIKE '%02-'",
+    ],
+    answerIndex: 0,
+    explanation:
+      "%는 0글자 이상. '02-'로 시작 → LIKE '02-%'. `_`는 한 글자, `=`는 와일드카드 미적용.",
+    tags: ["기출유형", "LIKE"],
+  },
+  {
+    id: "q075",
+    subject: "sql",
+    category: "sql_advanced",
+    difficulty: 2,
+    stem: "salgrade(losal, hisal) 등급표와 emp를 sal이 losal~hisal 범위에 드는지로 조인하는 것은?",
+    choices: ["EQUI JOIN", "NON-EQUI JOIN", "SELF JOIN", "CROSS JOIN"],
+    answerIndex: 1,
+    explanation:
+      "= 이 아닌 BETWEEN/부등호 조건으로 조인하면 NON-EQUI JOIN이다.",
+    tags: ["기출유형", "JOIN", "NonEqui"],
+  },
+  {
+    id: "q076",
+    subject: "sql",
+    category: "sql_advanced",
+    difficulty: 3,
+    stem: "Oracle 전통 문법에서 emp를 모두 보존하는 LEFT OUTER JOIN 표기는? (emp e, dept d)",
+    choices: [
+      "WHERE e.deptno = d.deptno(+)",
+      "WHERE e.deptno(+) = d.deptno",
+      "WHERE e.deptno(+) = d.deptno(+)",
+      "WHERE e.deptno = d.deptno",
+    ],
+    answerIndex: 0,
+    explanation:
+      "(+)는 NULL로 채워지는 '부족한' 쪽에 붙인다. 오른쪽 d에 (+)를 붙이면 왼쪽 emp가 모두 보존된다(=LEFT OUTER).",
+    tags: ["기출유형", "OUTER JOIN"],
+  },
+  {
+    id: "q077",
+    subject: "sql",
+    category: "sql_advanced",
+    difficulty: 2,
+    stem: "서브쿼리가 여러 행을 반환할 때 '='를 쓰면 오류다. 대신 사용할 수 있는 것은?",
+    choices: ["IN", "BETWEEN", "LIKE", "= 를 그대로 사용"],
+    answerIndex: 0,
+    explanation:
+      "다중행 서브쿼리에는 IN, ANY, ALL, EXISTS 같은 다중행 연산자를 써야 한다. 단일행 '='는 오류.",
+    tags: ["기출유형", "서브쿼리", "다중행"],
+  },
+  {
+    id: "q078",
+    subject: "sql",
+    category: "sql_advanced",
+    difficulty: 3,
+    stem: "sal < ANY (SELECT sal FROM emp WHERE deptno=30) 의 의미로 옳은 것은?",
+    choices: [
+      "30번 부서 최솟값보다 작아야 참",
+      "30번 부서 최댓값보다 작으면 참",
+      "30번 부서 평균보다 작아야 참",
+      "항상 거짓",
+    ],
+    answerIndex: 1,
+    explanation:
+      "< ANY는 집합의 어느 하나보다 작으면 참 → '최댓값'보다 작으면 된다. 반대로 < ALL은 '최솟값'보다 작아야 한다.",
+    tags: ["기출유형", "ANY", "ALL"],
+  },
+  {
+    id: "q079",
+    subject: "sql",
+    category: "sql_advanced",
+    difficulty: 2,
+    stem: "EXISTS 서브쿼리에 대한 설명으로 옳은 것은?",
+    choices: [
+      "서브쿼리가 반환한 값을 메인쿼리와 크기 비교한다.",
+      "행의 존재 여부만 판단하며, 존재가 확인되면 더 찾지 않고 참을 반환한다.",
+      "반드시 단일 행만 반환해야 한다.",
+      "NOT EXISTS는 문법상 사용할 수 없다.",
+    ],
+    answerIndex: 1,
+    explanation:
+      "EXISTS는 결과 행이 하나라도 있으면 참(값은 비교하지 않음). 존재만 확인하면 되므로 조기 종료가 가능하다.",
+    tags: ["기출유형", "EXISTS"],
+  },
+  {
+    id: "q080",
+    subject: "sql",
+    category: "sql_advanced",
+    difficulty: 2,
+    stem: "UNION과 UNION ALL의 차이로 옳지 않은 것은?",
+    choices: [
+      "UNION은 중복을 제거한다.",
+      "UNION ALL은 중복을 유지한다.",
+      "UNION은 정렬 부하가 있을 수 있다.",
+      "UNION ALL은 두 쿼리의 컬럼 개수가 달라도 동작한다.",
+    ],
+    answerIndex: 3,
+    explanation:
+      "집합 연산은 두 쿼리의 컬럼 개수·타입이 호환되어야 한다. 개수가 다르면 오류.",
+    tags: ["기출유형", "집합연산", "UNION"],
+  },
+  {
+    id: "q081",
+    subject: "sql",
+    category: "sql_advanced",
+    difficulty: 2,
+    stem: "A={1,2,3,4}, B={2,4,6} 일 때 A MINUS B 의 결과는?",
+    choices: ["{1, 3}", "{2, 4}", "{1, 2, 3, 4, 6}", "{6}"],
+    answerIndex: 0,
+    explanation:
+      "MINUS는 차집합(A에는 있고 B에는 없는 것). {1,2,3,4}에서 2,4를 빼면 {1,3}.",
+    tags: ["기출유형", "MINUS"],
+  },
+  {
+    id: "q082",
+    subject: "sql",
+    category: "sql_advanced",
+    difficulty: 3,
+    stem: "GROUP BY CUBE(a, b) 가 만드는 소계 조합으로 옳은 것은?",
+    choices: [
+      "(a,b), (a), ()",
+      "(a,b), (a), (b), ()",
+      "(a,b) 만",
+      "() 만",
+    ],
+    answerIndex: 1,
+    explanation:
+      "CUBE는 모든 조합의 소계를 만든다: (a,b),(a),(b),(). ROLLUP은 (a,b),(a),()의 일방향만.",
+    tags: ["기출유형", "CUBE", "ROLLUP"],
+  },
+  {
+    id: "q083",
+    subject: "sql",
+    category: "sql_advanced",
+    difficulty: 2,
+    stem: "점수 [90, 90, 80, 70]에 대한 RANK()와 DENSE_RANK() 결과 쌍으로 옳은 것은? (단계별 결과 참고)",
+    choices: [
+      "RANK 1,1,3,4 / DENSE 1,1,2,3",
+      "RANK 1,1,2,3 / DENSE 1,1,3,4",
+      "RANK 1,2,3,4 / DENSE 1,2,3,4",
+      "RANK 1,1,3,3 / DENSE 1,1,2,2",
+    ],
+    answerIndex: 0,
+    explanation:
+      "RANK는 동순위 뒤 순위를 건너뛰어 1,1,3,4. DENSE_RANK는 건너뛰지 않아 1,1,2,3.",
+    tags: ["기출유형", "윈도우함수", "RANK"],
+    sqlSteps: {
+      query:
+        "SELECT name, score, RANK() OVER(ORDER BY score DESC) rnk, DENSE_RANK() OVER(ORDER BY score DESC) drnk FROM t",
+      steps: [
+        {
+          clause: "FROM (t)",
+          desc: "대상 데이터.",
+          table: {
+            columns: ["name", "score"],
+            data: [
+              ["A", 90],
+              ["B", 90],
+              ["C", 80],
+              ["D", 70],
+            ],
+          },
+        },
+        {
+          clause: "ORDER BY score DESC",
+          desc: "점수 내림차순 정렬(동점은 그대로).",
+          table: {
+            columns: ["name", "score"],
+            data: [
+              ["A", 90],
+              ["B", 90],
+              ["C", 80],
+              ["D", 70],
+            ],
+          },
+        },
+        {
+          clause: "RANK / DENSE_RANK",
+          desc: "동점(90,90)은 같은 순위. RANK는 다음을 3으로 건너뛰고, DENSE_RANK는 2로 이어감.",
+          table: {
+            columns: ["name", "score", "RANK", "DENSE_RANK"],
+            data: [
+              ["A", 90, 1, 1],
+              ["B", 90, 1, 1],
+              ["C", 80, 3, 2],
+              ["D", 70, 4, 3],
+            ],
+          },
+        },
+      ],
+    },
+  },
+  {
+    id: "q084",
+    subject: "sql",
+    category: "sql_advanced",
+    difficulty: 2,
+    stem: "LAG(sal, 1, 0) OVER(ORDER BY hiredate) 의 의미로 옳은 것은?",
+    choices: [
+      "다음 행의 sal, 없으면 0",
+      "이전 행의 sal, 없으면 0",
+      "현재 행의 sal",
+      "최초 행의 sal",
+    ],
+    answerIndex: 1,
+    explanation:
+      "LAG는 현재 행보다 앞선(이전) 행 값을 가져온다. 세 번째 인자(0)는 대상이 없을 때의 기본값. (다음 행은 LEAD)",
+    tags: ["기출유형", "윈도우함수", "LAG"],
+  },
+  {
+    id: "q085",
+    subject: "sql",
+    category: "sql_advanced",
+    difficulty: 3,
+    stem: "NTILE(4) OVER(ORDER BY sal DESC) 의 의미로 옳은 것은?",
+    choices: [
+      "급여 상위 4명만 반환한다.",
+      "급여 순으로 4개 그룹으로 균등 분할해 1~4를 부여한다.",
+      "4번째 행만 반환한다.",
+      "4명씩 끊어 최대 4개까지만 만든다.",
+    ],
+    answerIndex: 1,
+    explanation:
+      "NTILE(n)은 정렬된 행을 n개 그룹으로 최대한 균등 분할하고 각 행에 그룹 번호(1~n)를 부여한다.",
+    tags: ["기출유형", "윈도우함수", "NTILE"],
+  },
+  {
+    id: "q086",
+    subject: "sql",
+    category: "sql_advanced",
+    difficulty: 3,
+    stem: "전체 급여 상위 5명을 구하는 올바른 쿼리는? (Oracle)",
+    choices: [
+      "SELECT * FROM emp WHERE ROWNUM <= 5 ORDER BY sal DESC",
+      "SELECT * FROM (SELECT * FROM emp ORDER BY sal DESC) WHERE ROWNUM <= 5",
+      "SELECT TOP 5 * FROM emp ORDER BY sal DESC",
+      "SELECT * FROM emp ORDER BY sal DESC LIMIT 5",
+    ],
+    answerIndex: 1,
+    explanation:
+      "ROWNUM은 정렬 전에 부여되므로 인라인 뷰로 먼저 정렬한 뒤 바깥에서 잘라야 한다. TOP은 SQL Server, LIMIT은 MySQL 문법.",
+    tags: ["기출유형", "ROWNUM", "TopN"],
+  },
+  {
+    id: "q087",
+    subject: "sql",
+    category: "sql_advanced",
+    difficulty: 2,
+    stem: "계층형 질의의 의사컬럼 LEVEL에 대한 설명으로 옳은 것은?",
+    choices: [
+      "루트가 0이다.",
+      "루트가 1이며 자식으로 내려갈수록 1씩 증가한다.",
+      "잎(리프) 노드가 1이다.",
+      "정렬 순서를 의미한다.",
+    ],
+    answerIndex: 1,
+    explanation:
+      "LEVEL은 계층 깊이를 나타내며 루트가 1, 하위로 갈수록 증가한다.",
+    tags: ["기출유형", "계층쿼리", "LEVEL"],
+  },
+  {
+    id: "q088",
+    subject: "sql",
+    category: "sql_advanced",
+    difficulty: 2,
+    stem: "인라인 뷰(Inline View)에 대한 설명으로 옳은 것은?",
+    choices: [
+      "SELECT 절에 위치하는 단일 값 서브쿼리다.",
+      "FROM 절에 위치하며 임시 결과 집합처럼 사용한다.",
+      "WHERE 절에만 위치한다.",
+      "미리 CREATE VIEW로 만들어 두어야 한다.",
+    ],
+    answerIndex: 1,
+    explanation:
+      "인라인 뷰는 FROM 절에 오는 서브쿼리로, 질의 안에서만 쓰는 임시 뷰처럼 동작한다(객체 생성 불필요).",
+    tags: ["기출유형", "인라인뷰", "서브쿼리"],
+  },
+  {
+    id: "q089",
+    subject: "sql",
+    category: "sql_management",
+    difficulty: 2,
+    stem: "WHERE 조건으로 일부 행만 삭제할 수 있고 ROLLBACK으로 복구 가능한 명령은?",
+    choices: ["TRUNCATE", "DELETE", "DROP", "TRUNCATE와 DROP"],
+    answerIndex: 1,
+    explanation:
+      "DELETE는 DML로 WHERE로 일부만 삭제, 롤백 가능. TRUNCATE는 DDL(전체 삭제·자동커밋·롤백 불가), DROP은 구조 삭제.",
+    tags: ["기출유형", "DELETE", "TRUNCATE"],
+  },
+  {
+    id: "q090",
+    subject: "sql",
+    category: "sql_management",
+    difficulty: 2,
+    stem: "소스와 비교해 일치하면 UPDATE, 없으면 INSERT를 한 문장으로 수행하는 것은?",
+    choices: ["UPSERT", "MERGE", "REPLACE", "UNION"],
+    answerIndex: 1,
+    explanation:
+      "MERGE 문이 WHEN MATCHED(UPDATE)와 WHEN NOT MATCHED(INSERT)를 한 번에 처리한다.",
+    tags: ["기출유형", "MERGE"],
+  },
+  {
+    id: "q091",
+    subject: "sql",
+    category: "sql_management",
+    difficulty: 2,
+    stem: "부모 행 삭제 시 이를 참조하는 자식 행도 함께 삭제되게 하는 FK 옵션은?",
+    choices: [
+      "ON DELETE SET NULL",
+      "ON DELETE CASCADE",
+      "ON DELETE RESTRICT",
+      "ON DELETE NO ACTION",
+    ],
+    answerIndex: 1,
+    explanation:
+      "ON DELETE CASCADE는 부모 삭제 시 자식까지 연쇄 삭제한다. SET NULL은 FK를 NULL로, RESTRICT/NO ACTION은 삭제를 막는다.",
+    tags: ["기출유형", "참조무결성", "CASCADE"],
+  },
+  {
+    id: "q092",
+    subject: "data_modeling",
+    category: "modeling_basics",
+    difficulty: 2,
+    stem: "내부 스키마가 변경되어도 개념·외부 스키마에 영향이 없는 성질은?",
+    choices: [
+      "논리적 독립성",
+      "물리적 독립성",
+      "개념적 독립성",
+      "구조적 독립성",
+    ],
+    answerIndex: 1,
+    explanation:
+      "물리적 독립성 = 내부(저장) 스키마 변경이 개념/외부에 영향 없음. 논리적 독립성 = 개념 변경이 외부에 영향 없음.",
+    tags: ["기출유형", "3층스키마", "데이터독립성"],
+  },
+  {
+    id: "q093",
+    subject: "data_modeling",
+    category: "modeling_basics",
+    difficulty: 2,
+    stem: "복합키의 일부에만 종속되는 속성을 분리하는 정규화 단계는?",
+    choices: ["제1정규형", "제2정규형", "제3정규형", "BCNF"],
+    answerIndex: 1,
+    explanation:
+      "제2정규형(2NF)은 부분 함수 종속(복합키 일부에만 종속)을 제거한다. 3NF는 이행 종속 제거.",
+    tags: ["기출유형", "정규화"],
+  },
+  {
+    id: "q094",
+    subject: "data_modeling",
+    category: "modeling_performance",
+    difficulty: 2,
+    stem: "반정규화(De-normalization)에 대한 설명으로 옳은 것은?",
+    choices: [
+      "조회·입력·수정·삭제 모든 성능이 향상된다.",
+      "중복을 허용해 조회 성능을 높이지만 정합성 관리 부담이 커진다.",
+      "정규화의 다른 이름이다.",
+      "데이터 모델의 유연성이 높아진다.",
+    ],
+    answerIndex: 1,
+    explanation:
+      "반정규화는 중복·통합으로 조회 성능을 높이는 대신, 입력·수정·삭제 부담과 정합성 관리 부담이 커지고 유연성은 낮아진다.",
+    tags: ["기출유형", "반정규화"],
   },
 ];

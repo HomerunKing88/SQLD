@@ -16,6 +16,10 @@ export default function HomePage() {
   const lastMock = mocks.length ? mocks[mocks.length - 1] : null;
 
   const dday = daysUntil(settings.examDate);
+  const gichulCount = useMemo(
+    () => questions.filter((q) => q.tags.includes("기출유형")).length,
+    []
+  );
   const today = useMemo(
     () => buildTodaySet({ questions, attempts, reviews, settings }),
     [attempts, reviews, settings]
@@ -188,6 +192,23 @@ export default function HomePage() {
             {weakest
               ? `${CATEGORY_LABEL[weakest.cat]} ${Math.round(weakest.rate * 100)}% — 집중 공략`
               : "정답률 낮은 유형을 몰아서 연습"}
+          </p>
+        </div>
+        <span className="ml-auto text-brand-500">→</span>
+      </Link>
+
+      {/* 기출 유형 진입 */}
+      <Link
+        href="/study?mode=gichul"
+        className="flex items-center gap-3 rounded-2xl border border-slate-200/70 bg-white p-4 shadow-card"
+      >
+        <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-brand-50 text-lg">
+          📜
+        </span>
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-slate-700">기출 유형</p>
+          <p className="truncate text-xs text-slate-400">
+            자주 나오는 개념·함정 {gichulCount}문항으로 집중 대비
           </p>
         </div>
         <span className="ml-auto text-brand-500">→</span>
