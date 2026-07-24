@@ -113,8 +113,8 @@ export const CONCEPTS: Concept[] = [
     title: "ERD 표기법",
     front: "IE 표기법에서 '까마귀발'은 무엇을 뜻할까?",
     summary:
-      "IE(까마귀발): 선 끝 삼발이=多(N). Barker(원+선): 점선=선택, 실선=필수. 관계 차수·선택성을 시각화.",
-    trap: "까마귀발이 붙은 쪽이 M(다)측. 원(○)은 선택(optional)을 의미.",
+      "IE(까마귀발): 선 끝 삼발이=多(N), 원(○)=선택. Barker: 점선=선택, 실선=필수(원 미사용). 관계 차수·선택성을 시각화.",
+    trap: "까마귀발이 붙은 쪽이 M(다)측. 원(○) 선택 기호는 IE 표기의 것.",
     example: "부서 ─< 사원: 사원 쪽 까마귀발 → 부서 1 : 사원 多.",
     tags: ["ERD", "표기법"],
   },
@@ -179,9 +179,9 @@ export const CONCEPTS: Concept[] = [
     title: "슈퍼타입 / 서브타입",
     front: "서브타입을 물리 테이블로 바꾸는 3가지 방식은?",
     summary:
-      "① All in One(Single·하나로 통합) ② One To One(서브타입별 개별 테이블) ③ Plus(슈퍼+서브 각각).",
+      "① All in One(Single·하나로 통합) ② One To One(슈퍼·서브를 각각 개별 테이블) ③ Plus(슈퍼타입을 서브타입에 통합, 서브타입별 테이블).",
     trap:
-      "데이터 적고 통합처리 多 → Single. 데이터 많고 개별처리 多 → OneToOne. 중간 → Plus.",
+      "데이터 적고 통합처리 多 → Single. 데이터 많고 개별처리 多 → OneToOne. 슈퍼+서브 함께 처리 → Plus.",
     example: "개인/법인 회원 → 조회가 대부분 통합이면 All in One이 유리.",
     tags: ["슈퍼타입", "서브타입"],
   },
