@@ -2,9 +2,12 @@
 
 import { useMemo, useState } from "react";
 import { OX_ITEMS } from "@/data/ox";
+import { CONCEPTS } from "@/data/concepts";
 import { CATEGORY_LABEL } from "@/lib/types";
-import type { OxItem } from "@/lib/types";
+import type { Concept, OxItem } from "@/lib/types";
 import type { ConceptGroup } from "@/lib/cards";
+
+const CONCEPT_BY_ID = new Map<string, Concept>(CONCEPTS.map((c) => [c.id, c]));
 
 const GROUPS: { key: ConceptGroup; label: string }[] = [
   { key: "all", label: "전체" },
@@ -20,6 +23,7 @@ export default function OxQuiz() {
   const [group, setGroup] = useState<ConceptGroup>("all");
   const [pos, setPos] = useState(0);
   const [picked, setPicked] = useState<boolean | null>(null);
+  const [showConcept, setShowConcept] = useState(false);
   const [score, setScore] = useState({ correct: 0, total: 0 });
   const [round, setRound] = useState(0);
 
@@ -32,17 +36,21 @@ export default function OxQuiz() {
   const done = pos >= items.length;
   const answered = picked !== null;
   const isCorrect = answered && item && picked === item.answer;
+  const concept = item?.conceptId ? CONCEPT_BY_ID.get(item.conceptId) : undefined;
 
   function changeGroup(g: ConceptGroup) {
     setGroup(g);
     setPos(0);
     setPicked(null);
+    setShowConcept(false);
     setScore({ correct: 0, total: 0 });
     setRound((r) => r + 1);
   }
   function pick(v: boolean) {
     if (answered || !item) return;
     setPicked(v);
+    // 틀리면 관련 개념 카드를 자동으로 펼쳐 바로 복습하도록.
+    setShowConcept(v !== item.answer);
     setScore((s) => ({
       correct: s.correct + (v === item.answer ? 1 : 0),
       total: s.total + 1,
@@ -50,11 +58,13 @@ export default function OxQuiz() {
   }
   function next() {
     setPicked(null);
+    setShowConcept(false);
     setPos((p) => p + 1);
   }
   function restart() {
     setPos(0);
     setPicked(null);
+    setShowConcept(false);
     setScore({ correct: 0, total: 0 });
     setRound((r) => r + 1);
   }
@@ -135,6 +145,44 @@ export default function OxQuiz() {
                   <p className="mt-1 text-sm leading-relaxed text-slate-700">
                     {item.explain}
                   </p>
+                </div>
+              )}
+
+              {/* 관련 개념 카드 — 틀리면 자동 펼침, 맞아도 버튼으로 확인 */}
+              {answered && concept && (
+                <div className="mt-3">
+                  {!showConcept ? (
+                    <button
+                      onClick={() => setShowConcept(true)}
+                      className="flex w-full items-center justify-center gap-1 rounded-xl border border-brand-200 bg-brand-50 py-2.5 text-sm font-bold text-brand-700 active:bg-brand-100"
+                    >
+                      📘 관련 개념 카드 보기
+                    </button>
+                  ) : (
+                    <div className="rounded-xl border border-brand-200 bg-brand-50/50 p-3">
+                      <div className="flex items-center gap-2">
+                        <span className="chip bg-brand-100 text-brand-700">
+                          관련 개념
+                        </span>
+                        <span className="text-sm font-black text-slate-900">
+                          {concept.title}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm leading-relaxed text-slate-700">
+                        {concept.summary}
+                      </p>
+                      {concept.trap && (
+                        <p className="mt-2 rounded-lg bg-accent-100/60 p-2 text-xs leading-relaxed text-slate-700">
+                          ⚠️ {concept.trap}
+                        </p>
+                      )}
+                      {concept.example && (
+                        <p className="mt-2 rounded-lg bg-white p-2 font-mono text-[12px] leading-relaxed text-slate-600">
+                          {concept.example}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

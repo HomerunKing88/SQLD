@@ -66,6 +66,7 @@ export interface OxItem {
   statement: string; // 판정할 진술
   answer: boolean; // true=O(옳다), false=X(그르다)
   explain: string; // 해설
+  conceptId?: string; // 관련 개념 카드(concepts.ts의 id) — 오답 시 바로 연결
   tags: string[];
 }
 
