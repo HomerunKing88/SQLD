@@ -187,13 +187,11 @@ export default function HomePage() {
           🃏
         </span>
         <div className="min-w-0">
-          <p className="text-base font-black">빈출 개념 카드</p>
+          <p className="text-base font-black">빈출 개념 암기</p>
           <p className="mt-0.5 text-xs text-brand-100">
-            {cards.total > 0 && cards.known === cards.total
-              ? `전 개념 숙지 완료 · 한 번 더 복습 →`
-              : cards.known + cards.learning > 0
-                ? `숙지 ${cards.known}/${cards.total} · 흔들리는 차 안에서 한 손 반복 →`
-                : `함정·핵심 ${cards.total}개 · 흔들리는 차 안에서 한 손 반복 →`}
+            {cards.known + cards.learning > 0
+              ? `숙지 ${cards.known}/${cards.total} · 카드 · O/X · 요약 →`
+              : `카드 ${cards.total} · O/X 퀴즈 · 요약 시트 — 한 손 반복 →`}
           </p>
         </div>
         <span className="ml-auto text-xl">→</span>

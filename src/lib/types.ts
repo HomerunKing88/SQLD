@@ -59,6 +59,16 @@ export interface Concept {
   tags: string[];
 }
 
+/** O/X 함정 퀴즈 1문항 */
+export interface OxItem {
+  id: string;
+  category: Category;
+  statement: string; // 판정할 진술
+  answer: boolean; // true=O(옳다), false=X(그르다)
+  explain: string; // 해설
+  tags: string[];
+}
+
 /** 카드 자가채점 등급 */
 export type CardRating = "again" | "ok" | "known";
 
