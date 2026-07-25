@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { OX_ITEMS } from "../src/data/ox";
+import { CONCEPTS } from "../src/data/concepts";
 
 test("O/X 무결성: id 고유·필수 필드·불리언 정답·유효 카테고리", () => {
   const ids = new Set<string>();
@@ -20,7 +21,18 @@ test("O/X 무결성: id 고유·필수 필드·불리언 정답·유효 카테�
     assert.ok(validCats.has(o.category), `${o.id} 잘못된 카테고리`);
     assert.ok(Array.isArray(o.tags), `${o.id} tags 배열 아님`);
   }
-  assert.ok(OX_ITEMS.length >= 30, "O/X 문항이 충분히 많아야 함");
+  assert.ok(OX_ITEMS.length >= 80, "O/X 문항이 충분히 많아야 함");
+});
+
+test("O/X ↔ 개념 카드 연결: conceptId는 실제 개념을 가리켜야 함", () => {
+  const conceptIds = new Set(CONCEPTS.map((c) => c.id));
+  for (const o of OX_ITEMS) {
+    assert.ok(o.conceptId, `${o.id}에 conceptId가 없음`);
+    assert.ok(
+      conceptIds.has(o.conceptId!),
+      `${o.id}의 conceptId '${o.conceptId}'가 존재하지 않는 개념`
+    );
+  }
 });
 
 test("O/X 정답 분포: 참·거짓이 한쪽으로 치우치지 않음", () => {
