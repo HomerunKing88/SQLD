@@ -133,11 +133,12 @@ export const CONCEPTS: Concept[] = [
     id: "c-identifier-rel",
     category: "modeling_basics",
     title: "식별관계 vs 비식별관계",
-    front: "실선(식별)과 점선(비식별) 관계의 차이는?",
+    front: "식별관계는 '강한 관계'인데 자식은 왜 '약한 개체'일까?",
     summary:
-      "식별관계=부모PK가 자식의 PK로 상속(실선·강함). 비식별관계=부모PK가 자식의 일반속성(FK)으로 상속(점선·약함).",
-    trap: "식별관계는 자식이 부모 없이 존재 불가. 과도한 식별관계는 PK 개수를 늘려 복잡도↑.",
-    example: "주문-주문상세: 주문번호가 상세의 PK 일부 → 식별관계.",
+      "식별관계=부모PK→자식PK 상속(실선). 비식별관계=부모PK→자식 일반속성(FK)으로 상속(점선).",
+    trap:
+      "용어 주의 — '관계'와 '개체'는 강약이 반대다. 식별관계=강한 '관계'이지만 그 자식은 부모 없이 못 사는 약한 '개체'. 비식별관계=약한 '관계'이나 자식은 독립 PK를 갖는 강한 '개체'.",
+    example: "주문-주문상세: 주문번호가 상세 PK의 일부 → 식별관계(강한 관계 / 약한 개체).",
     tags: ["식별관계", "관계"],
   },
   {
@@ -821,6 +822,121 @@ export const CONCEPTS: Concept[] = [
     trap: "성별·상태처럼 값 종류가 적은 컬럼은 Bitmap이 유리, 갱신 잦으면 부적합.",
     example: "CREATE INDEX idx_emp_dept ON emp(dept);",
     tags: ["인덱스", "B-tree", "비트맵"],
+  },
+
+  // ══════════════ 요약본 보강(출제기준 근거) ══════════════
+  {
+    id: "c-modeling-def",
+    category: "modeling_basics",
+    title: "데이터 모델링 정의·특징",
+    front: "데이터 모델링의 세 가지 '특징'은?",
+    summary:
+      "정보시스템 구축을 위한 '데이터 관점'의 업무분석 기법. 특징 3가지 = 추상화·단순화·명확화. 3요소 = 엔터티(대상)·속성·관계.",
+    trap:
+      "'유일성·유연성·일관성'은 특징이 아니라 유의점(중복·비유연성·비일관성 지양). 키(Key)는 모델링 3요소가 아니다.",
+    example: "현실세계를 표기법으로 추상화·단순화·명확화하여 표현.",
+    tags: ["모델링", "특징", "3요소"],
+  },
+  {
+    id: "c-key-types",
+    category: "modeling_basics",
+    title: "키의 종류 (후보키·슈퍼키·대체키)",
+    front: "후보키와 슈퍼키의 차이는?",
+    summary:
+      "슈퍼키(유일성 O, 최소성 X 가능), 후보키(유일성+최소성), 기본키(후보키 중 대표), 대체키(후보키 중 PK로 안 뽑힌 것), 외래키(다른 테이블 PK 참조).",
+    trap: "슈퍼키는 최소성을 만족하지 않을 수 있다. 후보키는 유일성·최소성 모두 만족.",
+    example: "후보키 {학번},{주민번호} 중 학번을 PK로 → 주민번호는 대체키.",
+    tags: ["키", "후보키", "슈퍼키", "대체키"],
+  },
+  {
+    id: "c-good-model",
+    category: "modeling_basics",
+    title: "좋은 데이터 모델의 요소",
+    front: "좋은 데이터 모델이 갖춰야 할 요소는?",
+    summary:
+      "완전성·중복 배제·업무규칙·데이터 재사용·의사소통·통합성.",
+    trap: "중복 배제와 통합성을 함께 만족해야 한다(중복 없이도 통합 조회 가능).",
+    example: "동일 개념은 한 곳에만(중복배제) + 전사적으로 일관 정의(통합성).",
+    tags: ["모델품질"],
+  },
+  {
+    id: "c-mutual-exclusive",
+    category: "modeling_basics",
+    title: "상호배타적 관계 · 순환(계층)관계",
+    front: "한 엔터티 내 인스턴스끼리의 계층은 어떻게 조회할까?",
+    summary:
+      "상호배타적 관계(아크)=두 대상 중 하나와만 관계를 맺음(동시 연결 불가). 순환(계층)관계=한 엔터티 안에서 인스턴스끼리 계층 → 셀프 조인으로 조회.",
+    trap: "계층형 데이터는 동일 테이블을 여러 번 조인하는 '셀프 조인'으로 조회한다.",
+    example: "사원-관리자(같은 사원 테이블) → 셀프 조인.",
+    tags: ["관계", "계층", "셀프조인"],
+  },
+  {
+    id: "c-rowchain",
+    category: "modeling_performance",
+    title: "로우 체이닝 · 로우 마이그레이션",
+    front: "로우 체이닝과 로우 마이그레이션의 차이는?",
+    summary:
+      "로우 체이닝=한 행이 너무 길어 여러 데이터 블록에 나뉘어 저장. 로우 마이그레이션=수정 후 원 블록에 공간이 부족해 다른 블록으로 옮겨 저장.",
+    trap: "둘 다 I/O를 늘려 성능을 떨어뜨린다. 컬럼 많은 대량 테이블은 분할을 고려.",
+    example: "넓은 테이블을 자주 쓰는 컬럼 기준으로 수직 분할하여 완화.",
+    tags: ["성능", "로우체이닝", "대량데이터"],
+  },
+  {
+    id: "c-relational-algebra",
+    category: "sql_basics",
+    title: "관계형 대수 (집합·순수관계 연산자)",
+    front: "순수 관계연산자 SELECT는 SQL의 무엇에 해당할까?",
+    summary:
+      "일반 집합연산자: UNION·INTERSECT·DIFFERENCE(MINUS)·PRODUCT(CROSS JOIN). 순수 관계연산자: SELECT→WHERE, PROJECT→SELECT, JOIN, DIVIDE.",
+    trap:
+      "관계대수 SELECT(행 선택)는 SQL의 WHERE, PROJECT(열 선택)가 SQL의 SELECT에 대응.",
+    example: "PRODUCT(카티션 곱)는 SQL의 CROSS JOIN.",
+    tags: ["관계대수"],
+  },
+  {
+    id: "c-procedural-sql",
+    category: "sql_management",
+    title: "절차형 SQL (PL/SQL·프로시저)",
+    front: "PL/SQL·T-SQL은 무엇을 위한 언어일까?",
+    summary:
+      "SQL에 조건분기·반복 등 절차 지향을 더한 언어(Oracle PL/SQL, SQL Server T-SQL). 저장 모듈: 프로시저·사용자정의함수·트리거.",
+    trap: "프로시저는 BEGIN~END 내에서 COMMIT/ROLLBACK을 쓸 수 있으나, 트리거는 불가.",
+    example: "IF·LOOP로 분기·반복을 수행하는 저장 프로시저.",
+    tags: ["절차형SQL", "PLSQL", "프로시저"],
+  },
+  {
+    id: "c-trigger",
+    category: "sql_management",
+    title: "트리거 (Trigger)",
+    front: "트리거는 누가 호출할까?",
+    summary:
+      "특정 테이블에 INSERT/UPDATE/DELETE(DML)가 발생하면 DB가 '자동' 실행하는 프로그램. 사용자가 직접 호출하지 않는다.",
+    trap: "트리거 내부에서는 COMMIT/ROLLBACK(TCL)을 사용할 수 없다. 보안·업무규칙 자동 적용에 사용.",
+    example: "주문 INSERT 시 재고를 자동 차감하는 트리거.",
+    tags: ["트리거", "DML"],
+  },
+  {
+    id: "c-join-method",
+    category: "sql_advanced",
+    title: "조인 수행 원리 (NL·Sort Merge·Hash)",
+    front: "Hash Join은 어떤 조인 조건에서만 쓸 수 있을까?",
+    summary:
+      "NL Join(중첩 반복, 외부→내부 테이블, 소량·온라인 유리), Sort Merge Join(양쪽 정렬 후 병합), Hash Join(해시로 매칭).",
+    trap:
+      "Hash Join은 '='(동등) 조인에서만 가능. NL Join은 결과가 적은 쪽을 외부(선행) 테이블로 두면 유리.",
+    example: "대량·비등가 범위 조인엔 Sort Merge, 동등 조인 대량엔 Hash Join.",
+    tags: ["조인", "NLJoin", "HashJoin"],
+  },
+  {
+    id: "c-index-structure",
+    category: "sql_management",
+    title: "인덱스 구조 (B-트리·클러스터형)",
+    front: "클러스터형 인덱스는 테이블당 몇 개 만들 수 있을까?",
+    summary:
+      "B-트리 인덱스: 리프 블록에 키값+RID(ROWID). '=' 일치·BETWEEN 범위 검색 모두 적합. 클러스터형 인덱스: 리프=데이터 페이지, 키 순으로 물리 정렬.",
+    trap: "클러스터형 인덱스는 데이터를 키 순으로 물리 정렬하므로 테이블당 하나만 가능.",
+    example: "B-트리 리프의 RID로 실제 행 위치를 찾아간다.",
+    tags: ["인덱스", "B트리", "클러스터형"],
   },
 ];
 
